@@ -16,7 +16,6 @@ const NavItem = ({ icon, label, isActive, activeColor, onClick }) => {
 };
 
 const MobileLayout = ({ children, activeTab, onTabChange }) => {
-    // Definimos qué color usar según la pestaña activa
     const getActiveColor = () => {
         if (activeTab === 'match') return 'text-orange-500';
         if (activeTab === 'rescue') return 'text-teal-500';
@@ -35,7 +34,10 @@ const MobileLayout = ({ children, activeTab, onTabChange }) => {
                     label="Inicio"
                     isActive={activeTab === 'home'}
                     activeColor="text-slate-800"
-                    onClick={() => onTabChange('home')}
+                    onClick={() => {
+                        onTabChange('home');
+                        window.dispatchEvent(new CustomEvent('trigger-home-scroll-top'));
+                    }}
                 />
                 <NavItem
                     icon={<Heart size={22} />}

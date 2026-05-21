@@ -1,56 +1,5 @@
-import { useState } from 'react';
-import { MapPin, Clock, Heart, Share2, AlertCircle, CheckCircle, Navigation } from 'lucide-react';
-
-const STATIC_FEED_DATA = [
-    {
-        id: "post_001",
-        authorName: "María Fernández",
-        authorAvatar: "👩🏽",
-        location: "Sabana Grande",
-        timeAgo: "Hace 10 min",
-        imageUrl: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=800",
-        description: "Perrito asustado cerca del bulevar. Parece tener collar pero no veo placa de identificación.",
-        tags: ["perro", "pequeño", "asustado"],
-        status: "pending",
-        likeCount: 12
-    },
-    {
-        id: "post_002",
-        authorName: "Carlos Mendoza",
-        authorAvatar: "👨🏻",
-        location: "Bello Monte",
-        timeAgo: "Hace 2 horas",
-        imageUrl: "https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&q=80&w=800",
-        description: "Gatito atrapado, los bomberos ya vienen en camino.",
-        tags: ["gato", "rescate_activo"],
-        status: "in_progress",
-        likeCount: 45
-    },
-    {
-        id: "post_003",
-        authorName: "Ana Silva",
-        authorAvatar: "👩🏻",
-        location: "La Candelaria",
-        timeAgo: "Hace 5 horas",
-        imageUrl: "https://images.unsplash.com/photo-1537151608804-ea2f1d71df0c?auto=format&fit=crop&q=80&w=800",
-        description: "Encontramos a este perrito vagando por la plaza. Ya está a salvo en el refugio esperando a sus dueños.",
-        tags: ["perro", "mediano", "a_salvo"],
-        status: "resolved",
-        likeCount: 128
-    },
-    {
-        id: "post_004",
-        authorName: "Refugio Esperanza",
-        authorAvatar: "🏥",
-        location: "La Florida",
-        timeAgo: "Hace 1 día",
-        imageUrl: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&q=80&w=800",
-        description: "Actualización del caso de ayer: Rocky está recuperándose súper bien. Pronto estará listo para adopción.",
-        tags: ["perro", "recuperación", "refugio"],
-        status: "resolved",
-        likeCount: 302
-    }
-];
+import { useState, useEffect, useRef } from 'react';
+import { MapPin, Clock, Heart, Share2, AlertCircle, CheckCircle, Navigation, Loader2 } from 'lucide-react';
 
 const STATUS_DICTIONARY = {
     pending: {
@@ -204,24 +153,94 @@ const FeedPost = ({ post }) => {
 };
 
 const HomePage = () => {
+    const [posts, setPosts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+    const mainScrollContainerRef = useRef(null);
+
+    const loadFeedData = async () => {
+        setLoading(true);
+        setError(false);
+        try {
+            const response = await fetch("http://localhost:8000/rescues");
+            if (!response.ok) throw new Error();
+            const data = await response.json();
+            setPosts(data);
+        } catch (err) {
+            setError(true);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleScrollToTop = () => {
+        if (mainScrollContainerRef.current) {
+            mainScrollContainerRef.current.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+    };
+
+    useEffect(() => {
+        loadFeedData();
+    }, []);
+
+    useEffect(() => {
+        window.addEventListener('trigger-home-scroll-top', handleScrollToTop);
+        return () => {
+            window.removeEventListener('trigger-home-scroll-top', handleScrollToTop);
+        };
+    }, []);
+
     return (
-        <div className="h-full flex flex-col bg-slate-50 overflow-y-auto">
-            <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 py-4 flex items-center justify-between">
+        <div
+            ref={mainScrollContainerRef}
+            className="h-full flex flex-col bg-slate-50 overflow-y-auto"
+        >
+            <div
+                onClick={handleScrollToTop}
+                className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 py-4 flex items-center justify-between cursor-pointer select-none"
+            >
                 <div>
                     <h1 className="text-2xl font-black text-slate-800 tracking-tight">Patitas<span className="text-teal-500">Match</span></h1>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Red de Rescate</p>
                 </div>
             </div>
 
-            <div className="p-4 max-w-sm w-full mx-auto">
-                {STATIC_FEED_DATA.map(post => (
+            <div className="p-4 max-w-sm w-full mx-auto flex-1 flex flex-col justify-center">
+                {loading && (
+                    <div className="flex flex-col items-center justify-center gap-2 py-12">
+                        <Loader2 size={28} className="animate-spin text-teal-500" />
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sincronizando Alertas...</span>
+                    </div>
+                )}
+
+                {error && !loading && (
+                    <div className="flex flex-col items-center justify-center text-center gap-3 py-12">
+                        <AlertCircle size={32} className="text-red-400" />
+                        <p className="text-xs font-semibold text-slate-400 max-w-[200px]">No se pudo cargar el canal de rescates.</p>
+                        <button onClick={loadFeedData} className="text-xs font-bold text-teal-500 uppercase tracking-wider hover:text-teal-600">Reintentar</button>
+                    </div>
+                )}
+
+                {!loading && !error && posts.length === 0 && (
+                    <div className="flex flex-col items-center justify-center text-center gap-2 py-12 text-slate-300">
+                        <CheckCircle size={36} />
+                        <span className="text-xs font-bold uppercase tracking-wider">Sin alertas activas</span>
+                    </div>
+                )}
+
+                {!loading && !error && posts.map(post => (
                     <FeedPost key={post.id} post={post} />
                 ))}
 
-                <div className="py-6 flex flex-col items-center justify-center text-slate-300 gap-2">
-                    <CheckCircle size={32} />
-                    <span className="text-xs font-bold uppercase tracking-wider">Estás al día</span>
-                </div>
+                {!loading && !error && posts.length > 0 && (
+                    <div className="py-6 flex flex-col items-center justify-center text-slate-300 gap-2">
+                        <CheckCircle size={32} />
+                        <span className="text-xs font-bold uppercase tracking-wider">Estás al día</span>
+                    </div>
+                )}
             </div>
         </div>
     );
