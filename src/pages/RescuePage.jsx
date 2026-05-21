@@ -88,10 +88,7 @@ const RescuePage = () => {
         formData.append("image", imageFile);
 
         try {
-            const [result] = await Promise.all([
-                submitRescueReport(formData),
-                new Promise(resolve => setTimeout(resolve, 1500))
-            ]);
+            const result = await submitRescueReport(formData);
 
             if (result.ai_tags === "INVALID_CONTENT") {
                 setSimulationState("error");
