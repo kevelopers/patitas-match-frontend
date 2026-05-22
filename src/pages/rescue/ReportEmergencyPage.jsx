@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Camera, MapPin, Loader2, CheckCircle, AlertCircle, Map } from 'lucide-react';
-import MapPicker from '../components/MapPicker';
-import { submitRescueReport } from '../services/api';
+import MapPicker from '../../components/MapPicker';
+import { submitRescueReport } from '../../services/api';
 
 const RescuePage = () => {
     const [imagePreview, setImagePreview] = useState(null);

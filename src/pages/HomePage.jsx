@@ -12,10 +12,25 @@ const STATUS_DICTIONARY = {
         label: "Rescate en Camino",
         colorClasses: "bg-amber-50 text-amber-600 border-amber-200"
     },
-    resolved: {
+    rescued: {
         IconComponent: CheckCircle,
-        label: "Animal a Salvo",
+        label: "Animal Rescatado",
         colorClasses: "bg-teal-50 text-teal-600 border-teal-200"
+    },
+    in_shelter: {
+        IconComponent: CheckCircle,
+        label: "En Refugio",
+        colorClasses: "bg-blue-50 text-blue-600 border-blue-200"
+    },
+    adopted: {
+        IconComponent: CheckCircle,
+        label: "Adoptado",
+        colorClasses: "bg-purple-50 text-purple-600 border-purple-200"
+    },
+    not_found: {
+        IconComponent: AlertCircle,
+        label: "No Localizado",
+        colorClasses: "bg-slate-100 text-slate-500 border-slate-200"
     }
 };
 
@@ -40,24 +55,76 @@ const TagPill = ({ tag }) => (
 );
 
 const FeedPost = ({ post }) => {
-    const [isLiked, setIsLiked] = useState(false);
-    const [currentLikes, setCurrentLikes] = useState(post.likeCount);
-    const [showHeartOverlay, setShowHeartOverlay] = useState(false);
-
-    const handleToggleLike = () => {
-        setIsLiked(!isLiked);
-        setCurrentLikes(prev => isLiked ? prev - 1 : prev + 1);
+    const getLikedRegistry = () => {
+        const stored = localStorage.getItem('patitas_liked_posts');
+        return stored ? JSON.parse(stored) : [];
     };
 
-    const handleDoubleClickLike = () => {
+    const likedRegistry = getLikedRegistry();
+    const initialLikedState = likedRegistry.includes(post.id) && (post.likeCount > 0);
+
+    const [isLiked, setIsLiked] = useState(initialLikedState);
+    const [currentLikes, setCurrentLikes] = useState(post.likeCount || 0);
+    const [showHeartOverlay, setShowHeartOverlay] = useState(false);
+    const lastClickTimeRef = useRef(0);
+
+    const executeBackendLikeAction = async (actionPath) => {
+        const cleanIntegerId = post.id.replace('report_', '');
+        try {
+            await fetch(`http://localhost:8000/rescues/${cleanIntegerId}/${actionPath}`, {
+                method: 'POST'
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleToggleLike = () => {
+        const registry = getLikedRegistry();
+        const nextLikedState = !isLiked;
+
+        let updatedRegistry;
+        if (nextLikedState) {
+            updatedRegistry = [...registry, post.id];
+            setCurrentLikes(prev => prev + 1);
+            executeBackendLikeAction('like');
+        } else {
+            updatedRegistry = registry.filter(id => id !== post.id);
+            setCurrentLikes(prev => Math.max(0, prev - 1));
+            executeBackendLikeAction('unlike');
+        }
+
+        localStorage.setItem('patitas_liked_posts', JSON.stringify(updatedRegistry));
+        setIsLiked(nextLikedState);
+    };
+
+    const handleImageTapDetection = () => {
+        const currentTime = Date.now();
+        const timeThresholdInMs = 300;
+        const isDoubleTap = (currentTime - lastClickTimeRef.current) < timeThresholdInMs;
+
+        if (isDoubleTap) {
+            executeHeartAnimationWorkflow();
+        }
+
+        lastClickTimeRef.current = currentTime;
+    };
+
+    const executeHeartAnimationWorkflow = () => {
         setShowHeartOverlay(true);
+        const registry = getLikedRegistry();
+
         if (!isLiked) {
+            const updatedRegistry = [...registry, post.id];
+            localStorage.setItem('patitas_liked_posts', JSON.stringify(updatedRegistry));
             setIsLiked(true);
             setCurrentLikes(prev => prev + 1);
+            executeBackendLikeAction('like');
         }
+
         setTimeout(() => {
             setShowHeartOverlay(false);
-        }, 600);
+        }, 1000);
     };
 
     const handleShare = async () => {
@@ -69,7 +136,7 @@ const FeedPost = ({ post }) => {
                     url: window.location.href,
                 });
             } catch (error) {
-                console.log('Error compartiendo:', error);
+                console.error(error);
             }
         } else {
             prompt('Copia este enlace para compartir:', window.location.href);
@@ -95,26 +162,28 @@ const FeedPost = ({ post }) => {
             </div>
 
             <div
-                className="w-full aspect-square bg-slate-100 relative select-none cursor-pointer overflow-hidden"
-                onDoubleClick={handleDoubleClickLike}
+                className="w-full aspect-square bg-slate-100 relative select-none cursor-pointer overflow-hidden flex items-center justify-center"
+                onClick={handleImageTapDetection}
             >
                 <img
-                    src={post.imageUrl}
+                    src={post.imageUrl || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop-60&w=800"}
                     alt="Animal reportado"
-                    className="w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-cover z-10"
                     loading="lazy"
                 />
 
-                <div className={`absolute inset-0 flex items-center justify-center bg-black/10 transition-all duration-300 pointer-events-none ${showHeartOverlay ? 'opacity-100' : 'opacity-0'
-                    }`}>
+                <div
+                    className={`absolute inset-0 bg-black/30 flex items-center justify-center z-50 pointer-events-none transition-all duration-500 ease-in-out ${showHeartOverlay ? 'opacity-100 backdrop-blur-[2px]' : 'opacity-0'
+                        }`}
+                >
                     <Heart
-                        size={80}
-                        className={`text-white fill-current transition-all duration-300 transform ${showHeartOverlay ? 'scale-100 rotate-0' : 'scale-50 -rotate-12'
+                        size={120}
+                        className={`text-white fill-white drop-shadow-2xl transition-all duration-500 ease-out transform ${showHeartOverlay ? 'scale-100 rotate-0' : 'scale-75 -rotate-12'
                             }`}
                     />
                 </div>
 
-                <div className="absolute top-3 right-3">
+                <div className="absolute top-3 right-3 z-20">
                     <StatusBadge status={post.status} />
                 </div>
             </div>
@@ -123,10 +192,16 @@ const FeedPost = ({ post }) => {
                 <div className="flex items-center gap-4 mb-3">
                     <button
                         onClick={handleToggleLike}
-                        className={`flex items-center gap-1.5 transition-colors ${isLiked ? 'text-red-500' : 'text-slate-400 hover:text-slate-600'}`}
+                        className="flex items-center gap-1.5 focus:outline-none transition-transform active:scale-95 text-left"
                     >
-                        <Heart size={24} className={isLiked ? "fill-current" : ""} />
-                        <span className="font-bold text-sm">{currentLikes}</span>
+                        <Heart
+                            size={24}
+                            className={`transition-all duration-200 ${isLiked ? "text-red-500 fill-red-500 scale-105" : "text-slate-400 hover:text-slate-600"
+                                }`}
+                        />
+                        <span className={`font-bold text-sm transition-colors ${isLiked ? "text-red-500" : "text-slate-600"}`}>
+                            {currentLikes}
+                        </span>
                     </button>
                     <button
                         onClick={handleShare}
@@ -143,7 +218,7 @@ const FeedPost = ({ post }) => {
                 </p>
 
                 <div className="flex flex-wrap gap-2">
-                    {post.tags.map((tag, index) => (
+                    {post.tags && post.tags.map((tag, index) => (
                         <TagPill key={index} tag={tag} />
                     ))}
                 </div>

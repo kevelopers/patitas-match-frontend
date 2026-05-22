@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import MatchCard from '../components/MatchCard';
-import { MatchSkeleton } from '../components/Skeleton';
-import { fetchMatchStack } from '../services/api';
+import MatchCard from '../../components/MatchCard';
+import { MatchSkeleton } from '../../components/Skeleton';
+import { fetchMatchStack } from '../../services/api';
 import { AlertCircle, RefreshCw, MessageCircle } from 'lucide-react';
 
 const MatchSuccessModal = ({ animalName, onClose }) => {

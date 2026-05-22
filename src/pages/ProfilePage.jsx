@@ -1,157 +1,223 @@
-import { useState } from 'react';
-import { Settings, Shield, LogOut, CheckCircle, Loader2, Home, Activity, Ruler, CalendarHeart } from 'lucide-react';
-import { setPreferences } from '../services/api';
-
-const MultiSelectOption = ({ label, value, currentArray, onToggle }) => {
-    const isSelected = currentArray.includes(value);
-
-    return (
-        <button
-            onClick={() => onToggle(value)}
-            className={`flex-1 py-2.5 px-2 rounded-xl text-xs font-bold border-2 transition-all ${isSelected
-                    ? 'border-orange-500 bg-orange-50 text-orange-600 shadow-sm'
-                    : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
-                }`}
-        >
-            {label}
-        </button>
-    );
-};
+import { useState, useEffect } from 'react';
+import { Settings, Shield, LogOut, Loader2, CheckCircle2, UserCheck } from 'lucide-react';
 
 const ProfilePage = () => {
-    const [preferredSize, setPreferredSize] = useState(['medium']);
-    const [preferredEnergy, setPreferredEnergy] = useState(['high']);
-    const [preferredAge, setPreferredAge] = useState(['adult']);
+    const userId = "user_tester_2026";
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [successMessage, setSuccessMessage] = useState(false);
+
+    const [userRole, setUserRole] = useState("standard");
+    const [size, setSize] = useState([]);
+    const [energyLevel, setEnergyLevel] = useState([]);
+    const [lifeStage, setLifeStage] = useState([]);
     const [hasYard, setHasYard] = useState(false);
-    const [saveStatus, setSaveStatus] = useState('idle');
 
-    const toggleArrayItem = (array, setArray, value) => {
-        if (array.includes(value)) {
-            setArray(array.filter(item => item !== value));
-        } else {
-            setArray([...array, value]);
-        }
-    };
+    useEffect(() => {
+        fetchUserProfile();
+    }, []);
 
-    const handleSavePreferences = async () => {
-        setSaveStatus('saving');
+    const fetchUserProfile = async () => {
         try {
-            await setPreferences("user_tester_2026", {
-                preferred_size: preferredSize,
-                preferred_energy: preferredEnergy,
-                preferred_age: preferredAge,
-                has_yard: hasYard
-            });
-            setSaveStatus('success');
-            setTimeout(() => setSaveStatus('idle'), 3000);
+            const response = await fetch(`http://localhost:8000/users/profile/${userId}`);
+            if (!response.ok) throw new Error();
+            const data = await response.json();
+
+            setUserRole(data.role);
+            setSize(data.preferences.size || []);
+            setEnergyLevel(data.preferences.energy_level || []);
+            setLifeStage(data.preferences.life_stage || []);
+            setHasYard(data.preferences.has_yard);
         } catch (error) {
-            setSaveStatus('error');
-            setTimeout(() => setSaveStatus('idle'), 3000);
+            console.error(error);
+        } medicalFinally: {
+            setLoading(false);
         }
     };
+
+    const handleTogglePreference = (value, currentArray, setArray) => {
+        if (currentArray.includes(value)) {
+            setArray(currentArray.filter(item => item !== value));
+        } else {
+            setArray([...currentArray, value]);
+        }
+    };
+
+    const handleSaveChanges = async () => {
+        setSaving(true);
+        try {
+            const response = await fetch(`http://localhost:8000/users/profile/${userId}/preferences`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    size,
+                    energy_level: energyLevel,
+                    life_stage: lifeStage,
+                    has_yard: hasYard,
+                    role: userRole
+                })
+            });
+
+            if (response.ok) {
+                setSuccessMessage(true);
+                window.dispatchEvent(new CustomEvent('user-role-changed', { detail: userRole }));
+                setTimeout(() => setSuccessMessage(false), 2500);
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="h-full flex flex-col items-center justify-center bg-slate-50 gap-2">
+                <Loader2 size={28} className="text-slate-400 animate-spin" />
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Cargando Perfil...</span>
+            </div>
+        );
+    }
 
     return (
-        <div className="h-full flex flex-col bg-slate-50 overflow-hidden">
-            <div className="bg-white border-b border-slate-100 px-4 py-4 flex items-center justify-between shrink-0 shadow-sm">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-800 tracking-tight">Mi Perfil</h1>
-                    <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mt-0.5">Configuraciones</p>
-                </div>
+        <div className="h-full flex flex-col bg-slate-50 overflow-y-auto pb-8">
+            <div className="bg-white border-b border-slate-100 px-4 py-4 shrink-0 shadow-sm">
+                <h1 className="text-2xl font-black text-slate-800 tracking-tight">Mi Perfil</h1>
+                <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mt-0.5">Configuraciones</p>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 max-w-sm w-full mx-auto space-y-6">
-                <div className="flex flex-col items-center py-4">
-                    <div className="w-20 h-20 bg-slate-200 rounded-full mb-3 border-4 border-white shadow-md flex items-center justify-center text-3xl select-none">
+            <div className="p-4 flex flex-col gap-6 max-w-sm w-full mx-auto">
+                <div className="flex flex-col items-center text-center mt-2">
+                    <div className="w-20 h-20 bg-slate-200 rounded-full flex items-center justify-center text-3xl border-4 border-white shadow-md mb-3 text-slate-500">
                         👤
                     </div>
-                    <h2 className="text-lg font-black text-slate-800">Usuario Evaluador</h2>
-                    <p className="text-slate-400 text-[10px] font-mono mt-1 bg-slate-100 px-2 py-0.5 rounded-md">ID: user_tester_2026</p>
+                    <h2 className="text-lg font-black text-slate-800 tracking-tight">Usuario Evaluador</h2>
+                    <span className="text-[11px] font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md mt-1">
+                        {userId}
+                    </span>
                 </div>
 
-                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-5">
-                    <div className="flex items-center gap-2 mb-1">
-                        <Settings size={18} className="text-orange-500" />
-                        <h3 className="font-bold text-slate-700 text-sm">Preferencias de Adopción</h3>
+                <div className="bg-white rounded-3xl border border-slate-100 p-4 shadow-[0_4px_12px_rgba(0,0,0,0.02)] space-y-4">
+                    <div className="flex items-center gap-2 border-b border-slate-50 pb-2">
+                        <UserCheck size={18} className="text-orange-500" />
+                        <h3 className="text-sm font-black text-slate-800 tracking-tight">Rol de Entorno (Simulación)</h3>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                        {['standard', 'rescuer', 'foundation'].map((roleOpt) => (
+                            <button
+                                key={roleOpt}
+                                onClick={() => setUserRole(roleOpt)}
+                                className={`py-2 px-1 rounded-xl text-[10px] font-bold uppercase border transition-all ${userRole === roleOpt
+                                        ? 'border-orange-500 bg-orange-50/50 text-orange-600 font-black'
+                                        : 'border-slate-200 text-slate-400 bg-white'
+                                    }`}
+                            >
+                                {roleOpt === 'standard' ? 'Estándar' : roleOpt === 'rescuer' ? 'Rescatista' : 'Fundación'}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-3xl border border-slate-100 p-4 shadow-[0_4px_12px_rgba(0,0,0,0.02)] space-y-5">
+                    <div className="flex items-center gap-2 border-b border-slate-50 pb-2">
+                        <Settings size={18} className="text-teal-500" />
+                        <h3 className="text-sm font-black text-slate-800 tracking-tight">Preferencias de Adopción</h3>
                     </div>
 
                     <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs font-semibold text-slate-500 px-1">
-                            <span className="flex items-center gap-1.5"><Ruler size={14} /> Tamaño</span>
-                        </div>
-                        <div className="flex gap-2">
-                            <MultiSelectOption label="Pequeño" value="small" currentArray={preferredSize} onToggle={(v) => toggleArrayItem(preferredSize, setPreferredSize, v)} />
-                            <MultiSelectOption label="Mediano" value="medium" currentArray={preferredSize} onToggle={(v) => toggleArrayItem(preferredSize, setPreferredSize, v)} />
-                            <MultiSelectOption label="Grande" value="large" currentArray={preferredSize} onToggle={(v) => toggleArrayItem(preferredSize, setPreferredSize, v)} />
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs font-semibold text-slate-500 px-1">
-                            <span className="flex items-center gap-1.5"><Activity size={14} /> Nivel de Energía</span>
-                        </div>
-                        <div className="flex gap-2">
-                            <MultiSelectOption label="Baja" value="low" currentArray={preferredEnergy} onToggle={(v) => toggleArrayItem(preferredEnergy, setPreferredEnergy, v)} />
-                            <MultiSelectOption label="Media" value="medium" currentArray={preferredEnergy} onToggle={(v) => toggleArrayItem(preferredEnergy, setPreferredEnergy, v)} />
-                            <MultiSelectOption label="Alta" value="high" currentArray={preferredEnergy} onToggle={(v) => toggleArrayItem(preferredEnergy, setPreferredEnergy, v)} />
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Tamaño</span>
+                        <div className="grid grid-cols-3 gap-2">
+                            {['small', 'medium', 'large'].map((opt) => (
+                                <button
+                                    key={opt}
+                                    onClick={() => handleTogglePreference(opt, size, setSize)}
+                                    className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${size.includes(opt) ? 'border-orange-500 text-orange-600 bg-orange-50/10 font-black' : 'border-slate-100 text-slate-400 bg-white'
+                                        }`}
+                                >
+                                    {opt === 'small' ? 'Pequeño' : opt === 'medium' ? 'Mediano' : 'Grande'}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs font-semibold text-slate-500 px-1">
-                            <span className="flex items-center gap-1.5"><CalendarHeart size={14} /> Etapa de Vida</span>
-                        </div>
-                        <div className="flex gap-2">
-                            <MultiSelectOption label="Cachorro" value="puppy" currentArray={preferredAge} onToggle={(v) => toggleArrayItem(preferredAge, setPreferredAge, v)} />
-                            <MultiSelectOption label="Adulto" value="adult" currentArray={preferredAge} onToggle={(v) => toggleArrayItem(preferredAge, setPreferredAge, v)} />
-                            <MultiSelectOption label="Mayor" value="senior" currentArray={preferredAge} onToggle={(v) => toggleArrayItem(preferredAge, setPreferredAge, v)} />
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Nivel de Energía</span>
+                        <div className="grid grid-cols-3 gap-2">
+                            {['low', 'medium', 'high'].map((opt) => (
+                                <button
+                                    key={opt}
+                                    onClick={() => handleTogglePreference(opt, energyLevel, setEnergyLevel)}
+                                    className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${energyLevel.includes(opt) ? 'border-orange-500 text-orange-600 bg-orange-50/10 font-black' : 'border-slate-100 text-slate-400 bg-white'
+                                        }`}
+                                >
+                                    {opt === 'low' ? 'Baja' : opt === 'medium' ? 'Media' : 'Alta'}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
-                            <Home size={16} className="text-slate-400" />
-                            ¿Tienes patio en casa?
+                    <div className="space-y-2">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Etapa de Vida</span>
+                        <div className="grid grid-cols-3 gap-2">
+                            {['puppy', 'adult', 'senior'].map((opt) => (
+                                <button
+                                    key={opt}
+                                    onClick={() => handleTogglePreference(opt, lifeStage, setLifeStage)}
+                                    className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${lifeStage.includes(opt) ? 'border-orange-500 text-orange-600 bg-orange-50/10 font-black' : 'border-slate-100 text-slate-400 bg-white'
+                                        }`}
+                                >
+                                    {opt === 'puppy' ? 'Cachorro' : opt === 'adult' ? 'Adulto' : 'Mayor'}
+                                </button>
+                            ))}
                         </div>
-                        <button
-                            onClick={() => setHasYard(!hasYard)}
-                            className={`w-12 h-6 rounded-full p-1 transition-colors ${hasYard ? 'bg-orange-500' : 'bg-slate-200'}`}
-                        >
-                            <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${hasYard ? 'translate-x-6' : 'translate-x-0'}`} />
-                        </button>
                     </div>
 
-                    {saveStatus === 'success' && (
-                        <div className="bg-green-50 text-green-700 text-xs font-bold p-3 rounded-xl flex items-center justify-center gap-2 animate-in fade-in">
-                            <CheckCircle size={16} /> Preferencias actualizadas
-                        </div>
-                    )}
+                    <div className="flex items-center justify-between border-t border-slate-50 pt-3">
+                        <span className="text-xs font-bold text-slate-600">¿Tienes patio en casa?</span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={hasYard}
+                                onChange={(e) => setHasYard(e.target.checked)}
+                                className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+                        </label>
+                    </div>
 
-                    {saveStatus === 'error' && (
-                        <div className="bg-red-50 text-red-700 text-xs font-bold p-3 rounded-xl flex items-center justify-center gap-2 animate-in fade-in">
-                            Error al guardar datos
+                    {successMessage && (
+                        <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold p-3 rounded-xl flex items-center gap-2 animate-in fade-in duration-200">
+                            <CheckCircle2 size={16} />
+                            <span>Cambios guardados con éxito.</span>
                         </div>
                     )}
 
                     <button
-                        onClick={handleSavePreferences}
-                        disabled={saveStatus === 'saving' || saveStatus === 'success'}
-                        className="w-full py-3.5 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-700 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm mt-4"
+                        onClick={handleSaveChanges}
+                        disabled={saving}
+                        className="w-full py-3.5 bg-slate-800 text-white font-bold rounded-2xl text-sm transition-all hover:bg-slate-900 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                        {saveStatus === 'saving' ? <Loader2 size={16} className="animate-spin" /> : "Guardar Cambios"}
+                        {saving && <Loader2 size={16} className="animate-spin" />}
+                        Guardar Cambios
                     </button>
                 </div>
 
-                <div className="space-y-3 pb-4">
-                    <button className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 shadow-sm active:scale-95 transition-all">
+                <div className="space-y-2.5">
+                    <button className="w-full bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex items-center justify-between text-left hover:bg-slate-100/50 transition-colors">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-slate-50 text-slate-500"><Shield size={18} /></div>
-                            <span className="font-bold text-slate-700 text-sm">Privacidad de la cuenta</span>
+                            <div className="w-8 h-8 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100">
+                                <Shield size={16} />
+                            </div>
+                            <span className="text-xs font-bold text-slate-700">Privacidad de la cuenta</span>
                         </div>
                     </button>
-                    <button className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 shadow-sm active:scale-95 transition-all">
+
+                    <button className="w-full bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex items-center justify-between text-left hover:bg-red-50/30 transition-colors group">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-red-50 text-red-400"><LogOut size={18} /></div>
-                            <span className="font-bold text-red-500 text-sm">Cerrar Sesión</span>
+                            <div className="w-8 h-8 rounded-xl bg-red-50/50 text-red-500 flex items-center justify-center border border-red-100/50">
+                                <LogOut size={16} />
+                            </div>
+                            <span className="text-xs font-bold text-red-500 group-hover:text-red-600">Cerrar Sesión</span>
                         </div>
                     </button>
                 </div>
