@@ -49,10 +49,20 @@ const MatchCard = ({ animal, onAccept, onReject }) => {
             style={{ x, rotate, opacity }}
             onDragEnd={handleDragEnd}
             whileDrag={{ cursor: 'grabbing' }}
-            className="absolute left-0 right-0 mx-auto w-full max-w-[340px] h-full bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col border border-slate-100 cursor-grab touch-none select-none z-10"
+            className="absolute left-0 right-0 mx-auto w-full max-w-[340px] h-full bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100 cursor-grab touch-none select-none z-10 flex flex-col justify-between overflow-hidden"
         >
-            <div className="h-[52%] bg-slate-100 flex flex-col items-center justify-center relative pointer-events-none overflow-hidden">
-                <span className="text-8xl filter drop-shadow-xl select-none relative z-10">🐶</span>
+            <div className="h-[45%] bg-slate-100 flex flex-col items-center justify-center relative pointer-events-none overflow-hidden shrink-0">
+                {animal.photo && animal.photo.startsWith('http') ? (
+                    <img
+                        src={animal.photo}
+                        alt={animal.name}
+                        className="w-full h-full object-cover absolute inset-0 z-10"
+                    />
+                ) : (
+                    <span className="text-7xl filter drop-shadow-xl select-none relative z-10">
+                        {animal.photo || '🐾'}
+                    </span>
+                )}
 
                 <AnimatePresence>
                     {likeActivated && (
@@ -70,26 +80,34 @@ const MatchCard = ({ animal, onAccept, onReject }) => {
 
                 <div className="absolute top-4 left-4 bg-slate-900/60 backdrop-blur-md text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-black tracking-wide border border-white/10 shadow-lg z-30">
                     <span className="text-amber-400 font-bold">✨</span>
-                    <span>{animal.match_score}% Match</span>
+                    <span>{animal.match_score || 100}% Match</span>
                 </div>
             </div>
 
-            <div className="p-6 flex-1 flex flex-col justify-between bg-white min-h-0 relative z-10">
-                <div className="pointer-events-none">
+            <div className="p-5 flex-1 flex flex-col justify-between bg-white text-left min-h-0">
+                <div className="pointer-events-none space-y-2 overflow-y-auto pr-1">
                     <h2 className="text-2xl font-black text-slate-800 leading-tight">
                         {animal.name}
                     </h2>
-                    <div className="flex gap-2 mt-3">
-                        <span className="px-2.5 py-1 bg-slate-50 border border-slate-100 text-slate-500 text-[10px] font-bold rounded-xl uppercase tracking-wider">
-                            T: {animal.size}
+                    <div className="flex flex-wrap gap-1.5">
+                        <span className="px-2.5 py-1 bg-slate-50 border border-slate-100 text-slate-500 text-[9px] font-bold rounded-xl uppercase tracking-wider">
+                            Tamaño: {animal.size === 'small' ? 'Pequeño' : animal.size === 'medium' ? 'Mediano' : 'Grande'}
                         </span>
-                        <span className="px-2.5 py-1 bg-slate-50 border border-slate-100 text-slate-500 text-[10px] font-bold rounded-xl uppercase tracking-wider">
-                            E: {animal.energy_level}
+                        <span className="px-2.5 py-1 bg-slate-50 border border-slate-100 text-slate-500 text-[9px] font-bold rounded-xl uppercase tracking-wider">
+                            Energía: {animal.energy_level === 'low' ? 'Baja' : animal.energy_level === 'medium' ? 'Media' : 'Alta'}
+                        </span>
+                        <span className="px-2.5 py-1 bg-slate-50 border border-slate-100 text-slate-500 text-[9px] font-bold rounded-xl uppercase tracking-wider">
+                            Etapa: {animal.age === 'young' ? 'Joven' : animal.age === 'adult' ? 'Adulto' : 'Mayor'}
                         </span>
                     </div>
+                    {animal.description && (
+                        <p className="text-xs font-medium text-slate-500 leading-relaxed pt-1">
+                            {animal.description}
+                        </p>
+                    )}
                 </div>
 
-                <div className="flex items-center justify-center gap-5 mt-4 z-20">
+                <div className="flex items-center justify-center gap-5 mt-4 pt-2 border-t border-slate-50 shrink-0">
                     <motion.button
                         onClick={() => handleButtonClick(onReject)}
                         style={{
@@ -104,9 +122,9 @@ const MatchCard = ({ animal, onAccept, onReject }) => {
                             scale: 1.1
                         }}
                         whileTap={{ scale: 0.9 }}
-                        className="w-14 h-14 border rounded-full flex items-center justify-center shadow-md transition-shadow duration-200 focus:outline-none z-10"
+                        className="w-12 h-12 border rounded-full flex items-center justify-center shadow-md transition-shadow duration-200 focus:outline-none z-10"
                     >
-                        <X size={26} strokeWidth={3} />
+                        <X size={22} strokeWidth={3} />
                     </motion.button>
 
                     <motion.button
@@ -124,9 +142,9 @@ const MatchCard = ({ animal, onAccept, onReject }) => {
                             scale: 1.15
                         }}
                         whileTap={{ scale: 0.9 }}
-                        className="w-16 h-16 border rounded-full flex items-center justify-center shadow-lg transition-all duration-200 focus:outline-none z-10"
+                        className="w-14 h-14 border rounded-full flex items-center justify-center shadow-lg transition-all duration-200 focus:outline-none z-10"
                     >
-                        <Heart size={30} className="fill-current" strokeWidth={2.5} />
+                        <Heart size={26} className="fill-current" strokeWidth={2.5} />
                     </motion.button>
                 </div>
             </div>

@@ -173,13 +173,11 @@ const FeedPost = ({ post }) => {
                 />
 
                 <div
-                    className={`absolute inset-0 bg-black/30 flex items-center justify-center z-50 pointer-events-none transition-all duration-500 ease-in-out ${showHeartOverlay ? 'opacity-100 backdrop-blur-[2px]' : 'opacity-0'
-                        }`}
+                    className={`absolute inset-0 bg-black/30 flex items-center justify-center z-50 pointer-events-none transition-all duration-500 ease-in-out ${showHeartOverlay ? 'opacity-100 backdrop-blur-[2px]' : 'opacity-0'}`}
                 >
                     <Heart
                         size={120}
-                        className={`text-white fill-white drop-shadow-2xl transition-all duration-500 ease-out transform ${showHeartOverlay ? 'scale-100 rotate-0' : 'scale-75 -rotate-12'
-                            }`}
+                        className={`text-white fill-white drop-shadow-2xl transition-all duration-500 ease-out transform ${showHeartOverlay ? 'scale-100 rotate-0' : 'scale-75 -rotate-12'}`}
                     />
                 </div>
 
@@ -196,8 +194,7 @@ const FeedPost = ({ post }) => {
                     >
                         <Heart
                             size={24}
-                            className={`transition-all duration-200 ${isLiked ? "text-red-500 fill-red-500 scale-105" : "text-slate-400 hover:text-slate-600"
-                                }`}
+                            className={`transition-all duration-200 ${isLiked ? "text-red-500 fill-red-500 scale-105" : "text-slate-400 hover:text-slate-600"}`}
                         />
                         <span className={`font-bold text-sm transition-colors ${isLiked ? "text-red-500" : "text-slate-600"}`}>
                             {currentLikes}

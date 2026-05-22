@@ -4,8 +4,11 @@ import { MatchSkeleton } from '../../components/Skeleton';
 import { fetchMatchStack } from '../../services/api';
 import { AlertCircle, RefreshCw, MessageCircle } from 'lucide-react';
 
-const MatchSuccessModal = ({ animalName, onClose }) => {
-    const whatsappUrl = `https://wa.me/584125799911?text=%C2%A1Hola%21+Hice+match+con+${encodeURIComponent(animalName)}+en+PatitasMatch.+%C2%A1Me+gustar%C3%ADa+iniciar+el+proceso+de+adopci%C3%B3n%21`;
+const MatchSuccessModal = ({ animalName, foundationPhone, onClose }) => {
+    const templateMessage = encodeURIComponent(
+        `¡Hola! Hice match con ${animalName} en PatitasMatch. ¡Me gustaría iniciar el proceso de adopción!`
+    );
+    const whatsappUrl = `https://wa.me/${foundationPhone || '584125799911'}?text=${templateMessage}`;
 
     return (
         <div className="fixed inset-0 z-[10000] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -38,16 +41,20 @@ const MatchSuccessModal = ({ animalName, onClose }) => {
 };
 
 const MatchPage = () => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const activeUserId = queryParams.get('user') || 'user_tester_2026';
+
     const [animals, setAnimals] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [matchedAnimal, setMatchedAnimal] = useState(null);
+    const [foundationPhone, setFoundationPhone] = useState('');
 
     const loadMatchData = async () => {
         setIsLoading(true);
         setError(null);
         try {
-            const matchStack = await fetchMatchStack("user_tester_2026");
+            const matchStack = await fetchMatchStack(activeUserId);
             setAnimals(matchStack);
         } catch (err) {
             setError(err.message || "Error connecting to the server");
@@ -58,24 +65,24 @@ const MatchPage = () => {
 
     useEffect(() => {
         loadMatchData();
-    }, []);
+    }, [activeUserId]);
 
     const handleNext = () => setAnimals(prev => prev.slice(1));
 
     const handleMatch = async () => {
         const targetAnimal = animals[0];
-        setMatchedAnimal(targetAnimal);
         try {
-            await fetch("http://localhost:8000/matches", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    user_id: "user_tester_2026",
-                    animal_id: targetAnimal.id
-                })
+            const response = await fetch(`http://localhost:8000/animals/${targetAnimal.id}/match`, {
+                method: "POST"
             });
+            if (response.ok) {
+                const result = await response.json();
+                setFoundationPhone(result.phone || '');
+                setMatchedAnimal(targetAnimal);
+            }
         } catch (err) {
             console.error(err);
+            setMatchedAnimal(targetAnimal);
         }
     };
 
@@ -87,7 +94,7 @@ const MatchPage = () => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    user_id: "user_tester_2026",
+                    user_id: activeUserId,
                     animal_id: targetAnimal.id
                 })
             });
@@ -126,7 +133,7 @@ const MatchPage = () => {
                 <h2 className="text-2xl font-black text-slate-800 mb-2">Oops!</h2>
                 <p className="text-slate-400 text-xs font-semibold max-w-[240px] mb-8 leading-relaxed">{error}</p>
                 <button
-                    range={loadMatchData}
+                    onClick={loadMatchData}
                     className="px-8 py-3.5 bg-slate-800 text-white font-bold rounded-2xl shadow-lg hover:bg-slate-700 active:scale-95 transition-all flex items-center gap-2 text-sm"
                 >
                     <RefreshCw size={18} /> Reintentar
@@ -178,6 +185,7 @@ const MatchPage = () => {
             {matchedAnimal && (
                 <MatchSuccessModal
                     animalName={matchedAnimal.name}
+                    foundationPhone={foundationPhone}
                     onClose={handleCloseModal}
                 />
             )}

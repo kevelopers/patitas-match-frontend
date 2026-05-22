@@ -11,10 +11,13 @@ function App() {
   const [currentTab, setCurrentTab] = useState('match');
   const [userRole, setUserRole] = useState('standard');
 
+  const queryParams = new URLSearchParams(window.location.search);
+  const activeUserId = queryParams.get('user') || 'user_tester_2026';
+
   useEffect(() => {
     const fetchInitialUserRole = async () => {
       try {
-        const response = await fetch('http://localhost:8000/users/profile/user_tester_2026');
+        const response = await fetch(`http://localhost:8000/users/profile/${activeUserId}`);
         if (response.ok) {
           const data = await response.json();
           setUserRole(data.role);
@@ -34,7 +37,7 @@ function App() {
     return () => {
       window.removeEventListener('user-role-changed', handleRoleCustomEvent);
     };
-  }, []);
+  }, [activeUserId]);
 
   const resolveMatchTabContent = () => {
     if (userRole === 'foundation') {
