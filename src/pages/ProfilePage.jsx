@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Settings, Shield, LogOut, Loader2, CheckCircle2 } from 'lucide-react';
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 
 const ProfilePage = ({ onNavigateToPrivacy }) => {
     const { user, logout, refreshUser } = useAuth();
@@ -34,7 +36,7 @@ const ProfilePage = ({ onNavigateToPrivacy }) => {
     const handleSaveChanges = async () => {
         setSaving(true);
         try {
-            const response = await fetch('http://localhost:8000/users/profile/preferences', {
+            const response = await fetch(`${API_BASE_URL}/users/profile/preferences`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

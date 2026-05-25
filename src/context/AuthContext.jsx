@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(null);
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -9,7 +10,7 @@ export const AuthProvider = ({ children }) => {
 
     const checkAuthStatus = async () => {
         try {
-            const response = await fetch('http://localhost:8000/users/profile', {
+            const response = await fetch(`${API_BASE_URL}/users/profile`, {
                 credentials: 'include'
             });
             if (response.ok) {
@@ -33,7 +34,7 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = async (username, password) => {
-        const response = await fetch('http://localhost:8000/auth/login', {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password }),
@@ -49,7 +50,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const register = async (username, password, name, role, phone) => {
-        const response = await fetch('http://localhost:8000/auth/register', {
+        const response = await fetch(`${API_BASE_URL}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password, name, role, phone }),
@@ -63,7 +64,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
-        await fetch('http://localhost:8000/auth/logout', {
+        await fetch(`${API_BASE_URL}/auth/logout`, {
             method: 'POST',
             credentials: 'include'
         });

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import MatchCard from '../../components/MatchCard';
 import { MatchSkeleton } from '../../components/Skeleton';
 import { AlertCircle, RefreshCw, MessageCircle } from 'lucide-react';
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 
 const MatchSuccessModal = ({ animalName, foundationPhone, onClose }) => {
     const templateMessage = encodeURIComponent(
@@ -50,7 +52,7 @@ const MatchPage = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch('http://localhost:8000/animals/discovery', {
+            const response = await fetch(`${API_BASE_URL}/animals/discovery`, {
                 credentials: 'include'
             });
             if (!response.ok) throw new Error("Error loading data");
@@ -72,7 +74,7 @@ const MatchPage = () => {
     const handleMatch = async () => {
         const targetAnimal = animals[0];
         try {
-            const response = await fetch(`http://localhost:8000/animals/${targetAnimal.id}/match`, {
+            const response = await fetch(`${API_BASE_URL}/animals/${targetAnimal.id}/match`, {
                 method: "POST",
                 credentials: 'include'
             });
@@ -95,7 +97,7 @@ const MatchPage = () => {
         const targetAnimal = animals[0];
         handleNext();
         try {
-            await fetch(`http://localhost:8000/animals/${targetAnimal.id}/reject`, {
+            await fetch(`${API_BASE_URL}/animals/${targetAnimal.id}/reject`, {
                 method: "POST",
                 credentials: 'include'
             });

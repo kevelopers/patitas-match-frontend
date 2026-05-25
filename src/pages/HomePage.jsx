@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { MapPin, Clock, Heart, Share2, AlertCircle, CheckCircle, Navigation, Loader2 } from 'lucide-react';
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const STATUS_DICTIONARY = {
     pending: {
@@ -68,7 +69,7 @@ const FeedPost = ({ post }) => {
     const executeBackendLikeAction = async (actionPath) => {
         const cleanIntegerId = post.id.replace('report_', '');
         try {
-            await fetch(`http://localhost:8000/rescues/${cleanIntegerId}/${actionPath}`, {
+            await fetch(`${API_BASE_URL}/rescues/${cleanIntegerId}/${actionPath}`, {
                 method: 'POST',
                 credentials: 'include'
             });
@@ -218,8 +219,8 @@ const FeedPost = ({ post }) => {
                     <div className="flex items-center justify-between">
                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Asistencia Digital IA</span>
                         <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${post.urgency === 'critical' ? 'bg-red-200 text-red-800 border-red-300' :
-                                post.urgency === 'high' ? 'bg-amber-200 text-amber-800 border-amber-300' :
-                                    'bg-slate-200 text-slate-700 border-slate-300'
+                            post.urgency === 'high' ? 'bg-amber-200 text-amber-800 border-amber-300' :
+                                'bg-slate-200 text-slate-700 border-slate-300'
                             }`}>
                             Urgencia: {post.urgency === 'critical' ? 'Crítica' : post.urgency === 'high' ? 'Alta' : 'Baja'}
                         </span>
@@ -272,7 +273,7 @@ const HomePage = () => {
         setLoading(true);
         setError(false);
         try {
-            const response = await fetch("http://localhost:8000/rescues", {
+            const response = await fetch(`${API_BASE_URL}/rescues`, {
                 credentials: 'include'
             });
             if (!response.ok) throw new Error();

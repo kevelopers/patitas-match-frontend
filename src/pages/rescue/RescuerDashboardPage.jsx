@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { MapPin, Clock, Loader2, CheckCircle2, AlertTriangle, X, Search } from 'lucide-react';
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 
 const STATUS_MAPPER = {
     pending: { label: "Reportado", color: "bg-red-50 text-red-600 border-red-100" },
@@ -42,7 +44,7 @@ const RescuerDashboardPage = () => {
 
     const fetchServerEmergencies = async () => {
         try {
-            const response = await fetch('http://localhost:8000/rescues');
+            const response = await fetch(`${API_BASE_URL}/rescues`);
             if (!response.ok) throw new Error();
             const data = await response.json();
             setAllCases(data);
@@ -55,7 +57,7 @@ const RescuerDashboardPage = () => {
 
     const fetchFoundations = async () => {
         try {
-            const response = await fetch('http://localhost:8000/users/foundations');
+            const response = await fetch(`${API_BASE_URL}/users/foundations`);
             if (response.ok) {
                 const data = await response.json();
                 setFoundations(data);
@@ -93,7 +95,7 @@ const RescuerDashboardPage = () => {
         const cleanIntegerId = reportId.replace('report_', '');
 
         try {
-            const response = await fetch(`http://localhost:8000/rescues/${cleanIntegerId}/status`, {
+            const response = await fetch(`${API_BASE_URL}/rescues/${cleanIntegerId}/status`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

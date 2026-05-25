@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Plus, Search, X, Heart, ShieldCheck, RefreshCw, Calendar, FileText, ArrowRight, CheckCircle2, Loader2, Camera } from 'lucide-react';
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 
 const STATUS_CONFIG = {
     draft: { label: "Oculto / Borrador", classes: "bg-slate-100 text-slate-500 border-slate-200" },
@@ -34,7 +36,7 @@ const FoundationDashboardPage = () => {
     const fetchAnimalsData = async () => {
         if (!user?.id) return;
         try {
-            const response = await fetch(`http://localhost:8000/animals/foundation/${user.id}`, {
+            const response = await fetch(`${API_BASE_URL}/animals/foundation/${user.id}`, {
                 credentials: 'include'
             });
             if (response.ok) {
@@ -112,7 +114,7 @@ const FoundationDashboardPage = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:8000/animals', {
+            const response = await fetch(`${API_BASE_URL}/animals`, {
                 method: 'POST',
                 body: multipartBody,
                 credentials: 'include'
@@ -145,7 +147,7 @@ const FoundationDashboardPage = () => {
         }
 
         try {
-            const response = await fetch(`http://localhost:8000/animals/${selectedAnimal.id}/update`, {
+            const response = await fetch(`${API_BASE_URL}/animals/${selectedAnimal.id}/update`, {
                 method: 'POST',
                 body: multipartBody,
                 credentials: 'include'
@@ -172,7 +174,7 @@ const FoundationDashboardPage = () => {
         multipartBody.append('status', nextStatus);
 
         try {
-            const response = await fetch(`http://localhost:8000/animals/${animal.id}/update`, {
+            const response = await fetch(`${API_BASE_URL}/animals/${animal.id}/update`, {
                 method: 'POST',
                 body: multipartBody,
                 credentials: 'include'
@@ -194,7 +196,7 @@ const FoundationDashboardPage = () => {
         multipartBody.append('text', logText);
 
         try {
-            const response = await fetch(`http://localhost:8000/animals/${selectedAnimal.id}/logs`, {
+            const response = await fetch(`${API_BASE_URL}/animals/${selectedAnimal.id}/logs`, {
                 method: 'POST',
                 body: multipartBody,
                 credentials: 'include'
@@ -281,8 +283,8 @@ const FoundationDashboardPage = () => {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex-1 text-center py-3 text-xs font-black uppercase tracking-wider transition-all border-b-2 whitespace-nowrap px-2 ${activeTab === tab.id
-                                    ? 'border-teal-500 text-teal-600'
-                                    : 'border-transparent text-slate-400'
+                                ? 'border-teal-500 text-teal-600'
+                                : 'border-transparent text-slate-400'
                                 }`}
                         >
                             {tab.label}

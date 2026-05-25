@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Camera, MapPin, Loader2, CheckCircle, AlertCircle, Map } from 'lucide-react';
 import MapPicker from '../../components/MapPicker';
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 
 const RescuePage = () => {
     const [imagePreview, setImagePreview] = useState(null);
@@ -86,7 +88,7 @@ const RescuePage = () => {
         formData.append("image", imageFile);
 
         try {
-            const response = await fetch("http://localhost:8000/rescues", {
+            const response = await fetch(`${API_BASE_URL}/rescues`, {
                 method: "POST",
                 body: formData,
                 credentials: "include"
