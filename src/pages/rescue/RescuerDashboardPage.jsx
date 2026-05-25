@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { MapPin, Clock, Loader2, CheckCircle2, AlertTriangle, X, Search } from 'lucide-react';
 
 const STATUS_MAPPER = {
@@ -11,6 +12,7 @@ const STATUS_MAPPER = {
 };
 
 const RescuerDashboardPage = () => {
+    const { user } = useAuth();
     const [allCases, setAllCases] = useState([]);
     const [activeSubTab, setActiveSubTab] = useState('radar');
     const [loading, setLoading] = useState(true);
@@ -101,7 +103,7 @@ const RescuerDashboardPage = () => {
                 credentials: 'include'
             });
             if (response.ok) {
-                setAllCases(prev => prev.map(c => c.id === reportId ? { ...c, status: nextStatus } : c));
+                setAllCases(prev => prev.map(c => c.id === reportId ? { ...c, status: nextStatus, rescuerId: user?.id } : c));
             }
         } catch (error) {
             console.error(error);
@@ -124,9 +126,9 @@ const RescuerDashboardPage = () => {
             return allCases.filter(c => c.status === 'pending');
         }
         if (activeSubTab === 'progress') {
-            return allCases.filter(c => c.status === 'in_progress');
+            return allCases.filter(c => c.status === 'in_progress' && c.rescuerId === user?.id);
         }
-        return allCases.filter(c => ['rescued', 'in_shelter', 'adopted', 'not_found'].includes(c.status));
+        return allCases.filter(c => ['rescued', 'in_shelter', 'adopted', 'not_found'].includes(c.status) && c.rescuerId === user?.id);
     };
 
     const filteredFoundations = foundations.filter(f =>
@@ -146,7 +148,7 @@ const RescuerDashboardPage = () => {
 
     return (
         <div className="h-full flex flex-col bg-slate-50 overflow-y-auto pb-8 relative">
-            <div className="bg-white border-b border-slate-100 px-4 pt-4 sticky top-0 z-40 shadow-sm space-y-3 shrink-0">
+            <div className="bg-white border-b border-slate-100 px-4 py-4 sticky top-0 z-40 shadow-sm space-y-3 shrink-0">
                 <div>
                     <h1 className="text-2xl font-black text-slate-800 tracking-tight">Radar de Rescate</h1>
                     <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mt-0.5">Operaciones de Campo</p>

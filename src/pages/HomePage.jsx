@@ -133,6 +133,16 @@ const FeedPost = ({ post }) => {
         }
     };
 
+    const resolveUrgencyContainerTheme = () => {
+        if (post.urgency === 'critical') {
+            return 'bg-red-100/60 border-red-200';
+        }
+        if (post.urgency === 'high') {
+            return 'bg-amber-100/60 border-amber-200';
+        }
+        return 'bg-slate-100/80 border-slate-200';
+    };
+
     return (
         <article className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-6">
             <div className="p-4 flex items-center justify-between">
@@ -176,8 +186,8 @@ const FeedPost = ({ post }) => {
                 </div>
             </div>
 
-            <div className="p-4">
-                <div className="flex items-center gap-4 mb-3">
+            <div className="p-4 space-y-4">
+                <div className="flex items-center gap-4">
                     <button
                         onClick={handleToggleLike}
                         className="flex items-center gap-1.5 focus:outline-none transition-transform active:scale-95 text-left"
@@ -199,10 +209,48 @@ const FeedPost = ({ post }) => {
                     </button>
                 </div>
 
-                <p className="text-sm font-medium text-slate-700 leading-relaxed mb-3">
+                <p className="text-sm font-medium text-slate-700 leading-relaxed text-left">
                     <span className="font-bold text-slate-900 mr-2">{post.authorName}</span>
                     {post.description}
                 </p>
+
+                <div className={`p-3.5 rounded-2xl space-y-3 border transition-colors ${resolveUrgencyContainerTheme()}`}>
+                    <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Asistencia Digital IA</span>
+                        <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${post.urgency === 'critical' ? 'bg-red-200 text-red-800 border-red-300' :
+                                post.urgency === 'high' ? 'bg-amber-200 text-amber-800 border-amber-300' :
+                                    'bg-slate-200 text-slate-700 border-slate-300'
+                            }`}>
+                            Urgencia: {post.urgency === 'critical' ? 'Crítica' : post.urgency === 'high' ? 'Alta' : 'Baja'}
+                        </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1.5 text-left">
+                        <div className="bg-white border border-slate-100 p-2 rounded-xl">
+                            <span className="text-[8px] font-bold text-slate-400 uppercase block">Raza Probable</span>
+                            <span className="text-[10px] font-black text-slate-700 block truncate mt-0.5">{post.breedMix || 'Desconocida'}</span>
+                        </div>
+                        <div className="bg-white border border-slate-100 p-2 rounded-xl">
+                            <span className="text-[8px] font-bold text-slate-400 uppercase block">Estado Ánimo</span>
+                            <span className="text-[10px] font-black text-slate-700 block truncate mt-0.5">{post.detectedMood || 'N/A'}</span>
+                        </div>
+                        <div className="bg-white border border-slate-100 p-2 rounded-xl">
+                            <span className="text-[8px] font-bold text-slate-400 uppercase block">Condición</span>
+                            <span className="text-[10px] font-black text-slate-700 block truncate mt-0.5">{post.physicalCondition || 'N/A'}</span>
+                        </div>
+                    </div>
+
+                    {post.firstAidAdvice && (
+                        <div className="bg-white p-2.5 rounded-xl text-left border border-slate-100">
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">Soporte Primario</span>
+                            <p className="text-[11px] font-medium text-slate-600 leading-snug">{post.firstAidAdvice}</p>
+                        </div>
+                    )}
+
+                    <div className="text-center pt-2 border-t border-slate-200/20">
+                        <span className="text-[7px] font-bold text-slate-400 uppercase tracking-wide block">El bloque de diagnóstico y soporte de arriba fue generado mediante Inteligencia Artificial</span>
+                    </div>
+                </div>
 
                 <div className="flex flex-wrap gap-2">
                     {post.tags && post.tags.map((tag, index) => (
