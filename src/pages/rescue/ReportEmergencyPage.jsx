@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Camera, MapPin, Loader2, CheckCircle, AlertCircle, Map } from 'lucide-react';
 import MapPicker from '../../components/MapPicker';
-import { submitRescueReport } from '../../services/api';
 
 const RescuePage = () => {
     const [imagePreview, setImagePreview] = useState(null);
@@ -83,14 +82,23 @@ const RescuePage = () => {
         setErrorMessage("");
 
         const formData = new FormData();
-        formData.append("reporter_id", "user_tester_2026");
         formData.append("location", `${locationText} | ${descriptionText}`);
         formData.append("image", imageFile);
 
         try {
-            const result = await submitRescueReport(formData);
+            const response = await fetch("http://localhost:8000/rescues", {
+                method: "POST",
+                body: formData,
+                credentials: "include"
+            });
 
-            if (result.ai_tags === "INVALID_CONTENT") {
+            if (!response.ok) {
+                throw new Error("Fallo en la comunicación con el servidor");
+            }
+
+            const result = await response.json();
+
+            if (result.ai_tags === "INVALID_CONTENT" || result.status === "rejected") {
                 setSimulationState("error");
                 setErrorMessage("La IA detectó que la imagen no corresponde a un perro, gato o animal.");
             } else {

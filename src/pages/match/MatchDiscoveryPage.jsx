@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import MatchCard from '../../components/MatchCard';
 import { MatchSkeleton } from '../../components/Skeleton';
-import { fetchMatchStack } from '../../services/api';
 import { AlertCircle, RefreshCw, MessageCircle } from 'lucide-react';
 
 const MatchSuccessModal = ({ animalName, foundationPhone, onClose }) => {
@@ -41,9 +40,6 @@ const MatchSuccessModal = ({ animalName, foundationPhone, onClose }) => {
 };
 
 const MatchPage = () => {
-    const queryParams = new URLSearchParams(window.location.search);
-    const activeUserId = queryParams.get('user') || 'user_tester_2026';
-
     const [animals, setAnimals] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -54,7 +50,11 @@ const MatchPage = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const matchStack = await fetchMatchStack(activeUserId);
+            const response = await fetch('http://localhost:8000/animals/discovery', {
+                credentials: 'include'
+            });
+            if (!response.ok) throw new Error("Error loading data");
+            const matchStack = await response.json();
             setAnimals(matchStack);
         } catch (err) {
             setError(err.message || "Error connecting to the server");
@@ -65,7 +65,7 @@ const MatchPage = () => {
 
     useEffect(() => {
         loadMatchData();
-    }, [activeUserId]);
+    }, []);
 
     const handleNext = () => setAnimals(prev => prev.slice(1));
 
@@ -73,16 +73,21 @@ const MatchPage = () => {
         const targetAnimal = animals[0];
         try {
             const response = await fetch(`http://localhost:8000/animals/${targetAnimal.id}/match`, {
-                method: "POST"
+                method: "POST",
+                credentials: 'include'
             });
             if (response.ok) {
                 const result = await response.json();
-                setFoundationPhone(result.phone || '');
-                setMatchedAnimal(targetAnimal);
+                if (result.status === 'success' && result.phone) {
+                    setFoundationPhone(result.phone || '');
+                    setMatchedAnimal(targetAnimal);
+                } else {
+                    handleNext();
+                }
             }
         } catch (err) {
             console.error(err);
-            setMatchedAnimal(targetAnimal);
+            handleNext();
         }
     };
 
@@ -90,13 +95,9 @@ const MatchPage = () => {
         const targetAnimal = animals[0];
         handleNext();
         try {
-            await fetch("http://localhost:8000/matches/reject", {
+            await fetch(`http://localhost:8000/animals/${targetAnimal.id}/reject`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    user_id: activeUserId,
-                    animal_id: targetAnimal.id
-                })
+                credentials: 'include'
             });
         } catch (err) {
             console.error(err);

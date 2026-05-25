@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Clock, Loader2, ChevronRight, CheckCircle2, AlertTriangle, X } from 'lucide-react';
+import { MapPin, Clock, Loader2, CheckCircle2, AlertTriangle, X, Search } from 'lucide-react';
 
 const STATUS_MAPPER = {
     pending: { label: "Reportado", color: "bg-red-50 text-red-600 border-red-100" },
@@ -15,6 +15,7 @@ const RescuerDashboardPage = () => {
     const [activeSubTab, setActiveSubTab] = useState('radar');
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState(null);
+    const [foundations, setFoundations] = useState([]);
 
     const [modalConfig, setModalConfig] = useState({
         isOpen: false,
@@ -25,8 +26,16 @@ const RescuerDashboardPage = () => {
         action: null
     });
 
+    const [isShelterModalOpen, setIsShelterModalOpen] = useState(false);
+    const [shelterCaseId, setShelterCaseId] = useState(null);
+    const [isExternal, setIsExternal] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedFoundationId, setSelectedFoundationId] = useState('');
+    const [externalDetails, setExternalDetails] = useState('');
+
     useEffect(() => {
         fetchServerEmergencies();
+        fetchFoundations();
     }, []);
 
     const fetchServerEmergencies = async () => {
@@ -42,7 +51,29 @@ const RescuerDashboardPage = () => {
         }
     };
 
+    const fetchFoundations = async () => {
+        try {
+            const response = await fetch('http://localhost:8000/users/foundations');
+            if (response.ok) {
+                const data = await response.json();
+                setFoundations(data);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     const triggerStatusModal = (reportId, nextStatus, title, description, confirmLabel, confirmColor) => {
+        if (nextStatus === 'in_shelter') {
+            setShelterCaseId(reportId);
+            setIsExternal(false);
+            setSearchQuery('');
+            setSelectedFoundationId('');
+            setExternalDetails('');
+            setIsShelterModalOpen(true);
+            return;
+        }
+
         setModalConfig({
             isOpen: true,
             title,
@@ -53,15 +84,21 @@ const RescuerDashboardPage = () => {
         });
     };
 
-    const handleUpdateCaseStatus = async (reportId, nextStatus) => {
+    const handleUpdateCaseStatus = async (reportId, nextStatus, shelterPayload = {}) => {
         setProcessingId(reportId);
         setModalConfig(prev => ({ ...prev, isOpen: false }));
+        setIsShelterModalOpen(false);
         const cleanIntegerId = reportId.replace('report_', '');
+
         try {
             const response = await fetch(`http://localhost:8000/rescues/${cleanIntegerId}/status`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: nextStatus })
+                body: JSON.stringify({
+                    status: nextStatus,
+                    ...shelterPayload
+                }),
+                credentials: 'include'
             });
             if (response.ok) {
                 setAllCases(prev => prev.map(c => c.id === reportId ? { ...c, status: nextStatus } : c));
@@ -73,6 +110,15 @@ const RescuerDashboardPage = () => {
         }
     };
 
+    const handleShelterSubmit = () => {
+        if (!shelterCaseId) return;
+        const payload = {
+            allied_foundation_id: isExternal ? null : selectedFoundationId || null,
+            external_shelter_details: isExternal ? externalDetails : null
+        };
+        handleUpdateCaseStatus(shelterCaseId, 'in_shelter', payload);
+    };
+
     const filterCasesByActiveTab = () => {
         if (activeSubTab === 'radar') {
             return allCases.filter(c => c.status === 'pending');
@@ -82,6 +128,10 @@ const RescuerDashboardPage = () => {
         }
         return allCases.filter(c => ['rescued', 'in_shelter', 'adopted', 'not_found'].includes(c.status));
     };
+
+    const filteredFoundations = foundations.filter(f =>
+        f.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     const displayedCases = filterCasesByActiveTab();
 
@@ -112,8 +162,8 @@ const RescuerDashboardPage = () => {
                             key={tab.id}
                             onClick={() => setActiveSubTab(tab.id)}
                             className={`flex-1 text-center py-3 text-xs font-black uppercase tracking-wider transition-all border-b-2 ${activeSubTab === tab.id
-                                    ? 'border-orange-500 text-orange-600'
-                                    : 'border-transparent text-slate-400'
+                                ? 'border-orange-500 text-orange-600'
+                                : 'border-transparent text-slate-400'
                                 }`}
                         >
                             {tab.label}
@@ -143,7 +193,7 @@ const RescuerDashboardPage = () => {
                             </div>
 
                             <div className="p-4 space-y-3">
-                                <div className="space-y-1">
+                                <div className="space-y-1 text-left">
                                     <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
                                         <MapPin size={14} className="text-orange-500 shrink-0" />
                                         <span className="truncate">{caseItem.location}</span>
@@ -154,7 +204,7 @@ const RescuerDashboardPage = () => {
                                 </div>
 
                                 {caseItem.description && (
-                                    <p className="text-xs font-medium text-slate-500 leading-relaxed bg-slate-50 p-3 rounded-2xl border border-slate-100/40">
+                                    <p className="text-xs font-medium text-slate-500 leading-relaxed bg-slate-50 p-3 rounded-2xl border border-slate-100/40 text-left">
                                         {caseItem.description}
                                     </p>
                                 )}
@@ -211,7 +261,7 @@ const RescuerDashboardPage = () => {
                                                     'bg-slate-500 hover:bg-slate-600'
                                                 )}
                                                 disabled={processingId === caseItem.id}
-                                                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold text-xs uppercase tracking-widest rounded-2xl transition-all active:scale-[0.99] flex items-center justify-center gap-1 border border-slate-200/60"
+                                                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold text-xs uppercase tracking-widest rounded-2xl transition-all active:scale-[0.99] flex items-center justify-center gap-1 shadow-sm border border-slate-200/60"
                                             >
                                                 Animal No Localizado
                                             </button>
@@ -241,6 +291,74 @@ const RescuerDashboardPage = () => {
                 )}
             </div>
 
+            {isShelterModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm animate-in fade-in duration-150 overflow-y-auto">
+                    <div className="bg-white w-full max-w-[290px] rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-50 animate-in zoom-in-95 duration-150 ease-out my-auto max-h-[85vh] overflow-y-auto flex flex-col">
+                        <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+                            <h3 className="text-sm font-black text-slate-800 tracking-tight">Ingreso a Refugio</h3>
+                            <button onClick={() => setIsShelterModalOpen(false)} className="w-7 h-7 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center font-bold text-xs">X</button>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-left">
+                            <input
+                                type="checkbox"
+                                id="externalCheckbox"
+                                checked={isExternal}
+                                onChange={(e) => setIsExternal(e.target.checked)}
+                                className="w-4 h-4 text-teal-600 border-slate-200 rounded focus:ring-teal-500"
+                            />
+                            <label htmlFor="externalCheckbox" className="text-xs font-bold text-slate-600 uppercase tracking-wide">Fundación no aliada</label>
+                        </div>
+
+                        {!isExternal ? (
+                            <div className="space-y-2 text-left">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Buscar Fundación Aliada</label>
+                                <div className="relative">
+                                    <Search size={14} className="absolute left-3 top-3 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Nombre del refugio..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full bg-slate-50 border border-slate-100 pl-8 pr-3 py-2 rounded-xl text-xs font-medium focus:outline-none focus:border-teal-400"
+                                    />
+                                </div>
+                                <div className="max-h-[120px] overflow-y-auto border border-slate-100 rounded-xl p-1 space-y-1 bg-slate-50/50">
+                                    {filteredFoundations.length === 0 ? (
+                                        <p className="text-[10px] text-slate-400 italic text-center py-2">No se encontraron fundaciones</p>
+                                    ) : (
+                                        filteredFoundations.map(f => (
+                                            <button
+                                                key={f.id}
+                                                onClick={() => setSelectedFoundationId(f.id)}
+                                                className={`w-full text-left p-2 rounded-lg text-xs font-bold uppercase transition-colors ${selectedFoundationId === f.id ? 'bg-teal-500 text-white' : 'hover:bg-slate-100 text-slate-600'}`}
+                                            >
+                                                {f.name}
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-1 text-left">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Detalles del Lugar / Contacto</label>
+                                <textarea
+                                    placeholder="Nombre del refugio externo, dirección o datos del cuidador..."
+                                    value={externalDetails}
+                                    onChange={(e) => setExternalDetails(e.target.value)}
+                                    className="w-full h-20 p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-medium focus:outline-none focus:border-teal-400 resize-none"
+                                />
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-50">
+                            <button onClick={() => setIsShelterModalOpen(false)} className="py-2 bg-slate-50 text-slate-500 font-bold text-[11px] uppercase tracking-wider rounded-xl border border-slate-200/60">Cancelar</button>
+                            <button onClick={handleShelterSubmit} className="py-2 bg-blue-500 text-white font-bold text-[11px] uppercase tracking-wider rounded-xl shadow-sm">Ingresar</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {modalConfig.isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm animate-in fade-in duration-150">
                     <div className="bg-white w-full max-w-[280px] rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-50 animate-in zoom-in-95 duration-150 ease-out">
@@ -256,7 +374,7 @@ const RescuerDashboardPage = () => {
                             </button>
                         </div>
 
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5 text-left">
                             <h3 className="text-sm font-black text-slate-800 tracking-tight">{modalConfig.title}</h3>
                             <p className="text-[11px] font-medium text-slate-400 leading-relaxed">
                                 {modalConfig.description}
@@ -272,7 +390,7 @@ const RescuerDashboardPage = () => {
                             </button>
                             <button
                                 onClick={modalConfig.action}
-                                className={`py-2.5 text-white font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all shadow-sm active:scale-95 ${modalConfig.confirmColor}`}
+                                className={`py-2.5 text-white font-bold text-[11px] uppercase tracking-wider rounded-xl transition-all shadow-sm active:scale-[0.99] ${modalConfig.confirmColor}`}
                             >
                                 {modalConfig.confirmLabel}
                             </button>

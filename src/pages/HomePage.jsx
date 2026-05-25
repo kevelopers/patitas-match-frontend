@@ -55,24 +55,22 @@ const TagPill = ({ tag }) => (
 );
 
 const FeedPost = ({ post }) => {
-    const getLikedRegistry = () => {
-        const stored = localStorage.getItem('patitas_liked_posts');
-        return stored ? JSON.parse(stored) : [];
-    };
-
-    const likedRegistry = getLikedRegistry();
-    const initialLikedState = likedRegistry.includes(post.id) && (post.likeCount > 0);
-
-    const [isLiked, setIsLiked] = useState(initialLikedState);
+    const [isLiked, setIsLiked] = useState(post.hasLiked || false);
     const [currentLikes, setCurrentLikes] = useState(post.likeCount || 0);
     const [showHeartOverlay, setShowHeartOverlay] = useState(false);
     const lastClickTimeRef = useRef(0);
+
+    useEffect(() => {
+        setIsLiked(post.hasLiked || false);
+        setCurrentLikes(post.likeCount || 0);
+    }, [post]);
 
     const executeBackendLikeAction = async (actionPath) => {
         const cleanIntegerId = post.id.replace('report_', '');
         try {
             await fetch(`http://localhost:8000/rescues/${cleanIntegerId}/${actionPath}`, {
-                method: 'POST'
+                method: 'POST',
+                credentials: 'include'
             });
         } catch (error) {
             console.error(error);
@@ -80,21 +78,16 @@ const FeedPost = ({ post }) => {
     };
 
     const handleToggleLike = () => {
-        const registry = getLikedRegistry();
         const nextLikedState = !isLiked;
 
-        let updatedRegistry;
         if (nextLikedState) {
-            updatedRegistry = [...registry, post.id];
             setCurrentLikes(prev => prev + 1);
             executeBackendLikeAction('like');
         } else {
-            updatedRegistry = registry.filter(id => id !== post.id);
             setCurrentLikes(prev => Math.max(0, prev - 1));
             executeBackendLikeAction('unlike');
         }
 
-        localStorage.setItem('patitas_liked_posts', JSON.stringify(updatedRegistry));
         setIsLiked(nextLikedState);
     };
 
@@ -112,11 +105,8 @@ const FeedPost = ({ post }) => {
 
     const executeHeartAnimationWorkflow = () => {
         setShowHeartOverlay(true);
-        const registry = getLikedRegistry();
 
         if (!isLiked) {
-            const updatedRegistry = [...registry, post.id];
-            localStorage.setItem('patitas_liked_posts', JSON.stringify(updatedRegistry));
             setIsLiked(true);
             setCurrentLikes(prev => prev + 1);
             executeBackendLikeAction('like');
@@ -234,7 +224,9 @@ const HomePage = () => {
         setLoading(true);
         setError(false);
         try {
-            const response = await fetch("http://localhost:8000/rescues");
+            const response = await fetch("http://localhost:8000/rescues", {
+                credentials: 'include'
+            });
             if (!response.ok) throw new Error();
             const data = await response.json();
             setPosts(data);

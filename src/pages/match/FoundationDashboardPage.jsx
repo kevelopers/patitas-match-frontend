@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { Plus, Search, X, Heart, ShieldCheck, RefreshCw, Calendar, FileText, ArrowRight, CheckCircle2, Loader2, Camera } from 'lucide-react';
 
 const STATUS_CONFIG = {
+    draft: { label: "Oculto / Borrador", classes: "bg-slate-100 text-slate-500 border-slate-200" },
     available: { label: "Disponible", classes: "bg-emerald-50 text-emerald-600 border-emerald-100" },
     in_progress: { label: "En Proceso", classes: "bg-amber-50 text-amber-600 border-amber-100" },
     adopted: { label: "Adoptado", classes: "bg-purple-50 text-purple-600 border-purple-100" }
 };
 
 const FoundationDashboardPage = () => {
-    const foundationId = "foundation_01";
+    const { user } = useAuth();
     const [animals, setAnimals] = useState([]);
     const [activeTab, setActiveTab] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
@@ -26,12 +28,15 @@ const FoundationDashboardPage = () => {
     const [imagePreviewUrl, setImagePreviewUrl] = useState('');
 
     const [formData, setFormData] = useState({
-        name: '', type: '', size: 'medium', energyLevel: 'medium', age: 'young', description: '', status: 'available'
+        name: '', type: '', size: 'medium', energyLevel: 'medium', age: 'young', description: '', status: 'draft'
     });
 
     const fetchAnimalsData = async () => {
+        if (!user?.id) return;
         try {
-            const response = await fetch(`http://localhost:8000/animals/foundation/${foundationId}`);
+            const response = await fetch(`http://localhost:8000/animals/foundation/${user.id}`, {
+                credentials: 'include'
+            });
             if (response.ok) {
                 const data = await response.json();
                 setAnimals(data);
@@ -45,7 +50,7 @@ const FoundationDashboardPage = () => {
 
     useEffect(() => {
         fetchAnimalsData();
-    }, []);
+    }, [user?.id]);
 
     const handleInputChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -60,7 +65,7 @@ const FoundationDashboardPage = () => {
     };
 
     const handleOpenCreateModal = () => {
-        setFormData({ name: '', type: '', size: 'medium', energyLevel: 'medium', age: 'young', description: '', status: 'available' });
+        setFormData({ name: '', type: '', size: 'medium', energyLevel: 'medium', age: 'young', description: '', status: 'draft' });
         setSelectedFile(null);
         setImagePreviewUrl('');
         setIsCreateModalOpen(true);
@@ -90,11 +95,11 @@ const FoundationDashboardPage = () => {
     };
 
     const handleCreateAnimal = async () => {
-        if (!formData.name || formData.name.trim() === '') return;
+        if (!formData.name || formData.name.trim() === '' || !user?.id) return;
         setProcessing(true);
 
         const multipartBody = new FormData();
-        multipartBody.append('foundation_id', foundationId);
+        multipartBody.append('foundation_id', user.id);
         multipartBody.append('name', formData.name);
         multipartBody.append('animal_type', formData.type || 'Desconocido');
         multipartBody.append('size', formData.size);
@@ -109,7 +114,8 @@ const FoundationDashboardPage = () => {
         try {
             const response = await fetch('http://localhost:8000/animals', {
                 method: 'POST',
-                body: multipartBody
+                body: multipartBody,
+                credentials: 'include'
             });
             if (response.ok) {
                 await fetchAnimalsData();
@@ -141,7 +147,8 @@ const FoundationDashboardPage = () => {
         try {
             const response = await fetch(`http://localhost:8000/animals/${selectedAnimal.id}/update`, {
                 method: 'POST',
-                body: multipartBody
+                body: multipartBody,
+                credentials: 'include'
             });
             if (response.ok) {
                 await fetchAnimalsData();
@@ -167,7 +174,8 @@ const FoundationDashboardPage = () => {
         try {
             const response = await fetch(`http://localhost:8000/animals/${animal.id}/update`, {
                 method: 'POST',
-                body: multipartBody
+                body: multipartBody,
+                credentials: 'include'
             });
             if (response.ok) {
                 await fetchAnimalsData();
@@ -188,7 +196,8 @@ const FoundationDashboardPage = () => {
         try {
             const response = await fetch(`http://localhost:8000/animals/${selectedAnimal.id}/logs`, {
                 method: 'POST',
-                body: multipartBody
+                body: multipartBody,
+                credentials: 'include'
             });
             if (response.ok) {
                 const newLog = await response.json();
@@ -292,7 +301,7 @@ const FoundationDashboardPage = () => {
                         <div
                             key={animal.id}
                             onClick={() => handleOpenEditModal(animal)}
-                            className="bg-white border border-slate-100 p-4 rounded-3xl shadow-sm flex flex-col gap-3 cursor-pointer transition-all hover:border-slate-200/80 group"
+                            className="bg-white border border-slate-100 p-4 rounded-3xl shadow-sm flex flex-col gap-3 cursor-pointer transition-all hover:border-slate-200/80 group text-left"
                         >
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
@@ -310,8 +319,8 @@ const FoundationDashboardPage = () => {
                                         </p>
                                     </div>
                                 </div>
-                                <span className={`text-[9px] font-black border px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0 ${STATUS_CONFIG[animal.status]?.classes}`}>
-                                    {STATUS_CONFIG[animal.status]?.label}
+                                <span className="text-[9px] font-black border px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0 bg-slate-50 border-slate-200">
+                                    {STATUS_CONFIG[animal.status]?.label || "Oculto / Borrador"}
                                 </span>
                             </div>
 
@@ -336,6 +345,15 @@ const FoundationDashboardPage = () => {
                                 )}
 
                                 <div className="flex items-center gap-1.5 ml-auto">
+                                    {animal.status === 'draft' && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleDirectStatusChange(animal, 'available'); }}
+                                            className="py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-1 shadow-sm shrink-0"
+                                        >
+                                            Publicar <CheckCircle2 size={10} />
+                                        </button>
+                                    )}
+
                                     {animal.status === 'available' && (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); handleDirectStatusChange(animal, 'in_progress'); }}
@@ -354,9 +372,9 @@ const FoundationDashboardPage = () => {
                                         </button>
                                     )}
 
-                                    {animal.status !== 'available' && (
+                                    {(animal.status === 'in_progress' || animal.status === 'adopted') && (
                                         <button
-                                            onClick={(e) => { e.stopPropagation(); handleDirectStatusChange(animal, 'available'); }}
+                                            onClick={(e) => { e.stopPropagation(); handleDirectStatusChange(animal, 'draft'); }}
                                             className="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all border border-slate-200/60 flex items-center gap-1 shrink-0"
                                         >
                                             <RefreshCw size={10} /> Reactivar
@@ -415,7 +433,7 @@ const FoundationDashboardPage = () => {
                                     value={formData.name}
                                     onChange={(e) => handleInputChange('name', e.target.value)}
                                     placeholder="Ej: Max, Luna..."
-                                    className="w-full bg-slate-50 border border-slate-100 p-2 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:border-teal-400"
+                                    className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:border-teal-400"
                                 />
                             </div>
 
@@ -426,7 +444,7 @@ const FoundationDashboardPage = () => {
                                     value={formData.type}
                                     onChange={(e) => handleInputChange('type', e.target.value)}
                                     placeholder="Ej: Perro, Gato, Ave, Conejo..."
-                                    className="w-full bg-slate-50 border border-slate-100 p-2 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:border-teal-400"
+                                    className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:border-teal-400"
                                 />
                             </div>
 
@@ -477,6 +495,7 @@ const FoundationDashboardPage = () => {
                                         onChange={(e) => handleInputChange('status', e.target.value)}
                                         className="w-full bg-slate-50 border border-slate-100 p-2 rounded-xl text-xs font-bold text-slate-600 focus:outline-none"
                                     >
+                                        <option value="draft">Oculto / Borrador</option>
                                         <option value="available">Disponible</option>
                                         <option value="in_progress">En Proceso</option>
                                         <option value="adopted">Adoptado</option>

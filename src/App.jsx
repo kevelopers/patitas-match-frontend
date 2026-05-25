@@ -1,53 +1,54 @@
 import { useState, useEffect } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import MobileLayout from './layouts/MobileLayout';
 import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
+import PrivacySettingsPage from './pages/PrivacySettingsPage';
 import MatchDiscoveryPage from './pages/match/MatchDiscoveryPage';
 import FoundationDashboardPage from './pages/match/FoundationDashboardPage';
 import ReportEmergencyPage from './pages/rescue/ReportEmergencyPage';
 import RescuerDashboardPage from './pages/rescue/RescuerDashboardPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import { Loader2 } from 'lucide-react';
 
-function App() {
+function AppContent() {
+  const { isAuthenticated, loading, user } = useAuth();
   const [currentTab, setCurrentTab] = useState('match');
-  const [userRole, setUserRole] = useState('standard');
-
-  const queryParams = new URLSearchParams(window.location.search);
-  const activeUserId = queryParams.get('user') || 'user_tester_2026';
+  const [authView, setAuthView] = useState('login');
 
   useEffect(() => {
-    const fetchInitialUserRole = async () => {
-      try {
-        const response = await fetch(`http://localhost:8000/users/profile/${activeUserId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setUserRole(data.role);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
+    if (isAuthenticated) {
+      setAuthView('login');
+      setCurrentTab('home');
+    }
+  }, [isAuthenticated]);
 
-    const handleRoleCustomEvent = (event) => {
-      setUserRole(event.detail);
-    };
+  if (loading) {
+    return (
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-50 gap-2">
+        <Loader2 size={32} className="text-teal-500 animate-spin" />
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Iniciando Entorno...</span>
+      </div>
+    );
+  }
 
-    fetchInitialUserRole();
-    window.addEventListener('user-role-changed', handleRoleCustomEvent);
-
-    return () => {
-      window.removeEventListener('user-role-changed', handleRoleCustomEvent);
-    };
-  }, [activeUserId]);
+  if (!isAuthenticated) {
+    if (authView === 'register') {
+      return <RegisterPage onNavigateToLogin={() => setAuthView('login')} />;
+    }
+    return <LoginPage onNavigateToRegister={() => setAuthView('register')} />;
+  }
 
   const resolveMatchTabContent = () => {
-    if (userRole === 'foundation') {
+    if (user?.role === 'foundation') {
       return <FoundationDashboardPage />;
     }
     return <MatchDiscoveryPage />;
   };
 
   const resolveRescueTabContent = () => {
-    if (userRole === 'rescuer') {
+    if (user?.role === 'rescuer') {
       return <RescuerDashboardPage />;
     }
     return <ReportEmergencyPage />;
@@ -62,16 +63,26 @@ function App() {
       case 'rescue':
         return resolveRescueTabContent();
       case 'profile':
-        return <ProfilePage />;
+        return <ProfilePage onNavigateToPrivacy={() => setCurrentTab('privacy_settings')} />;
+      case 'privacy_settings':
+        return <PrivacySettingsPage onBack={() => setCurrentTab('profile')} />;
       default:
         return null;
     }
   };
 
   return (
-    <MobileLayout activeTab={currentTab} onTabChange={setCurrentTab}>
+    <MobileLayout activeTab={currentTab === 'privacy_settings' ? 'profile' : currentTab} onTabChange={setCurrentTab}>
       {renderContent()}
     </MobileLayout>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

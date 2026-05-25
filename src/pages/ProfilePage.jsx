@@ -1,39 +1,27 @@
 import { useState, useEffect } from 'react';
-import { Settings, Shield, LogOut, Loader2, CheckCircle2, UserCheck } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Settings, Shield, LogOut, Loader2, CheckCircle2 } from 'lucide-react';
 
-const ProfilePage = () => {
-    const userId = "user_tester_2026";
+const ProfilePage = ({ onNavigateToPrivacy }) => {
+    const { user, logout, refreshUser } = useAuth();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [successMessage, setSuccessMessage] = useState(false);
 
-    const [userRole, setUserRole] = useState("standard");
     const [size, setSize] = useState([]);
     const [energyLevel, setEnergyLevel] = useState([]);
     const [lifeStage, setLifeStage] = useState([]);
     const [hasYard, setHasYard] = useState(false);
 
     useEffect(() => {
-        fetchUserProfile();
-    }, []);
-
-    const fetchUserProfile = async () => {
-        try {
-            const response = await fetch(`http://localhost:8000/users/profile/${userId}`);
-            if (!response.ok) throw new Error();
-            const data = await response.json();
-
-            setUserRole(data.role);
-            setSize(data.preferences.size || []);
-            setEnergyLevel(data.preferences.energy_level || []);
-            setLifeStage(data.preferences.life_stage || []);
-            setHasYard(data.preferences.has_yard);
-        } catch (error) {
-            console.error(error);
-        } medicalFinally: {
+        if (user) {
+            setSize(user.preferences?.size || []);
+            setEnergyLevel(user.preferences?.energy_level || []);
+            setLifeStage(user.preferences?.life_stage || []);
+            setHasYard(!!user.preferences?.has_yard);
             setLoading(false);
         }
-    };
+    }, [user]);
 
     const handleTogglePreference = (value, currentArray, setArray) => {
         if (currentArray.includes(value)) {
@@ -46,7 +34,7 @@ const ProfilePage = () => {
     const handleSaveChanges = async () => {
         setSaving(true);
         try {
-            const response = await fetch(`http://localhost:8000/users/profile/${userId}/preferences`, {
+            const response = await fetch('http://localhost:8000/users/profile/preferences', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -54,13 +42,14 @@ const ProfilePage = () => {
                     energy_level: energyLevel,
                     life_stage: lifeStage,
                     has_yard: hasYard,
-                    role: userRole
-                })
+                    role: user.role
+                }),
+                credentials: 'include'
             });
 
             if (response.ok) {
                 setSuccessMessage(true);
-                window.dispatchEvent(new CustomEvent('user-role-changed', { detail: userRole }));
+                await refreshUser();
                 setTimeout(() => setSuccessMessage(false), 2500);
             }
         } catch (error) {
@@ -91,40 +80,19 @@ const ProfilePage = () => {
                     <div className="w-20 h-20 bg-slate-200 rounded-full flex items-center justify-center text-3xl border-4 border-white shadow-md mb-3 text-slate-500">
                         👤
                     </div>
-                    <h2 className="text-lg font-black text-slate-800 tracking-tight">Usuario Evaluador</h2>
+                    <h2 className="text-lg font-black text-slate-800 tracking-tight">{user?.name}</h2>
                     <span className="text-[11px] font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md mt-1">
-                        {userId}
+                        @{user?.username} ({user?.role === 'standard' ? 'Adoptante' : user?.role === 'rescuer' ? 'Rescatista' : 'Fundación'})
                     </span>
-                </div>
-
-                <div className="bg-white rounded-3xl border border-slate-100 p-4 shadow-[0_4px_12px_rgba(0,0,0,0.02)] space-y-4">
-                    <div className="flex items-center gap-2 border-b border-slate-50 pb-2">
-                        <UserCheck size={18} className="text-orange-500" />
-                        <h3 className="text-sm font-black text-slate-800 tracking-tight">Rol de Entorno (Simulación)</h3>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                        {['standard', 'rescuer', 'foundation'].map((roleOpt) => (
-                            <button
-                                key={roleOpt}
-                                onClick={() => setUserRole(roleOpt)}
-                                className={`py-2 px-1 rounded-xl text-[10px] font-bold uppercase border transition-all ${userRole === roleOpt
-                                        ? 'border-orange-500 bg-orange-50/50 text-orange-600 font-black'
-                                        : 'border-slate-200 text-slate-400 bg-white'
-                                    }`}
-                            >
-                                {roleOpt === 'standard' ? 'Estándar' : roleOpt === 'rescuer' ? 'Rescatista' : 'Fundación'}
-                            </button>
-                        ))}
-                    </div>
                 </div>
 
                 <div className="bg-white rounded-3xl border border-slate-100 p-4 shadow-[0_4px_12px_rgba(0,0,0,0.02)] space-y-5">
                     <div className="flex items-center gap-2 border-b border-slate-50 pb-2">
                         <Settings size={18} className="text-teal-500" />
-                        <h3 className="text-sm font-black text-slate-800 tracking-tight">Preferencias de Adopción</h3>
+                        <h3 className="text-sm font-black text-slate-800 tracking-tight">Preferencias de Búsqueda</h3>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-2 text-left">
                         <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Tamaño</span>
                         <div className="grid grid-cols-3 gap-2">
                             {['small', 'medium', 'large'].map((opt) => (
@@ -140,7 +108,7 @@ const ProfilePage = () => {
                         </div>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-2 text-left">
                         <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Nivel de Energía</span>
                         <div className="grid grid-cols-3 gap-2">
                             {['low', 'medium', 'high'].map((opt) => (
@@ -156,17 +124,17 @@ const ProfilePage = () => {
                         </div>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-2 text-left">
                         <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Etapa de Vida</span>
                         <div className="grid grid-cols-3 gap-2">
-                            {['puppy', 'adult', 'senior'].map((opt) => (
+                            {['young', 'adult', 'senior'].map((opt) => (
                                 <button
                                     key={opt}
                                     onClick={() => handleTogglePreference(opt, lifeStage, setLifeStage)}
                                     className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${lifeStage.includes(opt) ? 'border-orange-500 text-orange-600 bg-orange-50/10 font-black' : 'border-slate-100 text-slate-400 bg-white'
                                         }`}
                                 >
-                                    {opt === 'puppy' ? 'Cachorro' : opt === 'adult' ? 'Adulto' : 'Mayor'}
+                                    {opt === 'young' ? 'Joven' : opt === 'adult' ? 'Adulto' : 'Mayor'}
                                 </button>
                             ))}
                         </div>
@@ -203,7 +171,10 @@ const ProfilePage = () => {
                 </div>
 
                 <div className="space-y-2.5">
-                    <button className="w-full bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex items-center justify-between text-left hover:bg-slate-100/50 transition-colors">
+                    <button
+                        onClick={onNavigateToPrivacy}
+                        className="w-full bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex items-center justify-between text-left hover:bg-slate-100/50 transition-colors"
+                    >
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100">
                                 <Shield size={16} />
@@ -212,7 +183,10 @@ const ProfilePage = () => {
                         </div>
                     </button>
 
-                    <button className="w-full bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex items-center justify-between text-left hover:bg-red-50/30 transition-colors group">
+                    <button
+                        onClick={logout}
+                        className="w-full bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex items-center justify-between text-left hover:bg-red-50/30 transition-colors group"
+                    >
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-xl bg-red-50/50 text-red-500 flex items-center justify-center border border-red-100/50">
                                 <LogOut size={16} />
