@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
 import { X, Heart } from 'lucide-react';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 const MatchCard = ({ animal, onAccept, onReject }) => {
     const [likeActivated, setLikeActivated] = useState(false);
     const x = useMotionValue(0);
@@ -42,6 +44,10 @@ const MatchCard = ({ animal, onAccept, onReject }) => {
         }
     };
 
+    const sanitizedPhotoUrl = animal.photo && animal.photo.startsWith('http://localhost:8000')
+        ? animal.photo.replace('http://localhost:8000', API_BASE_URL)
+        : animal.photo;
+
     return (
         <motion.div
             drag="x"
@@ -52,9 +58,9 @@ const MatchCard = ({ animal, onAccept, onReject }) => {
             className="absolute left-0 right-0 mx-auto w-full max-w-[340px] h-full bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100 cursor-grab touch-none select-none z-10 flex flex-col justify-between overflow-hidden"
         >
             <div className="h-[45%] bg-slate-100 flex flex-col items-center justify-center relative pointer-events-none overflow-hidden shrink-0">
-                {animal.photo && animal.photo.startsWith('http') ? (
+                {sanitizedPhotoUrl && sanitizedPhotoUrl.startsWith('http') ? (
                     <img
-                        src={animal.photo}
+                        src={sanitizedPhotoUrl}
                         alt={animal.name}
                         className="w-full h-full object-cover absolute inset-0 z-10"
                     />

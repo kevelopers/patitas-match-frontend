@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Settings, Shield, LogOut, Loader2, CheckCircle2 } from 'lucide-react';
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+import { Settings, Shield, LogOut, Loader2, CheckCircle2, ShieldAlert } from 'lucide-react';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const ProfilePage = ({ onNavigateToPrivacy }) => {
     const { user, logout, refreshUser } = useAuth();
@@ -75,7 +75,7 @@ const ProfilePage = ({ onNavigateToPrivacy }) => {
 
     return (
         <div className="h-full flex flex-col bg-slate-50 overflow-y-auto pb-8">
-            <div className="bg-white border-b border-slate-100 px-4 py-4 shrink-0 shadow-sm">
+            <div className="bg-white border-b border-slate-100 px-4 py-4 shrink-0">
                 <h1 className="text-2xl font-black text-slate-800 tracking-tight">Mi Perfil</h1>
                 <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mt-0.5">Configuraciones</p>
             </div>
@@ -91,89 +91,99 @@ const ProfilePage = ({ onNavigateToPrivacy }) => {
                     </span>
                 </div>
 
-                <div className="bg-white rounded-3xl border border-slate-100 p-4 shadow-[0_4px_12px_rgba(0,0,0,0.02)] space-y-5">
-                    <div className="flex items-center gap-2 border-b border-slate-50 pb-2">
-                        <Settings size={18} className="text-teal-500" />
-                        <h3 className="text-sm font-black text-slate-800 tracking-tight">Preferencias de Búsqueda</h3>
+                {user?.role === 'foundation' ? (
+                    <div className="bg-white rounded-3xl border border-slate-100 p-5 shadow-[0_4px_12px_rgba(0,0,0,0.02)] flex flex-col items-center text-center gap-2">
+                        <ShieldAlert size={28} className="text-teal-500" />
+                        <h3 className="text-sm font-black text-slate-800 tracking-tight">Cuenta Institucional</h3>
+                        <p className="text-xs font-medium text-slate-400 leading-relaxed max-w-[240px]">
+                            Las fundaciones gestionan reportes de emergencia y el catálogo de adopciones. No requieren configurar preferencias de afinidad.
+                        </p>
                     </div>
-
-                    <div className="space-y-2 text-left">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Tamaño</span>
-                        <div className="grid grid-cols-3 gap-2">
-                            {['small', 'medium', 'large'].map((opt) => (
-                                <button
-                                    key={opt}
-                                    onClick={() => handleTogglePreference(opt, size, setSize)}
-                                    className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${size.includes(opt) ? 'border-orange-500 text-orange-600 bg-orange-50/10 font-black' : 'border-slate-100 text-slate-400 bg-white'
-                                        }`}
-                                >
-                                    {opt === 'small' ? 'Pequeño' : opt === 'medium' ? 'Mediano' : 'Grande'}
-                                </button>
-                            ))}
+                ) : (
+                    <div className="bg-white rounded-3xl border border-slate-100 p-4 shadow-[0_4px_12px_rgba(0,0,0,0.02)] space-y-5">
+                        <div className="flex items-center gap-2 border-b border-slate-50 pb-2">
+                            <Settings size={18} className="text-teal-500" />
+                            <h3 className="text-sm font-black text-slate-800 tracking-tight">Preferencias de Búsqueda</h3>
                         </div>
-                    </div>
 
-                    <div className="space-y-2 text-left">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Nivel de Energía</span>
-                        <div className="grid grid-cols-3 gap-2">
-                            {['low', 'medium', 'high'].map((opt) => (
-                                <button
-                                    key={opt}
-                                    onClick={() => handleTogglePreference(opt, energyLevel, setEnergyLevel)}
-                                    className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${energyLevel.includes(opt) ? 'border-orange-500 text-orange-600 bg-orange-50/10 font-black' : 'border-slate-100 text-slate-400 bg-white'
-                                        }`}
-                                >
-                                    {opt === 'low' ? 'Baja' : opt === 'medium' ? 'Media' : 'Alta'}
-                                </button>
-                            ))}
+                        <div className="space-y-2 text-left">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Tamaño</span>
+                            <div className="grid grid-cols-3 gap-2">
+                                {['small', 'medium', 'large'].map((opt) => (
+                                    <button
+                                        key={opt}
+                                        onClick={() => handleTogglePreference(opt, size, setSize)}
+                                        className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${size.includes(opt) ? 'border-orange-500 text-orange-600 bg-orange-50/10 font-black' : 'border-slate-100 text-slate-400 bg-white'
+                                            }`}
+                                    >
+                                        {opt === 'small' ? 'Pequeño' : opt === 'medium' ? 'Mediano' : 'Grande'}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="space-y-2 text-left">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Etapa de Vida</span>
-                        <div className="grid grid-cols-3 gap-2">
-                            {['young', 'adult', 'senior'].map((opt) => (
-                                <button
-                                    key={opt}
-                                    onClick={() => handleTogglePreference(opt, lifeStage, setLifeStage)}
-                                    className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${lifeStage.includes(opt) ? 'border-orange-500 text-orange-600 bg-orange-50/10 font-black' : 'border-slate-100 text-slate-400 bg-white'
-                                        }`}
-                                >
-                                    {opt === 'young' ? 'Joven' : opt === 'adult' ? 'Adulto' : 'Mayor'}
-                                </button>
-                            ))}
+                        <div className="space-y-2 text-left">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Nivel de Energía</span>
+                            <div className="grid grid-cols-3 gap-2">
+                                {['low', 'medium', 'high'].map((opt) => (
+                                    <button
+                                        key={opt}
+                                        onClick={() => handleTogglePreference(opt, energyLevel, setEnergyLevel)}
+                                        className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${energyLevel.includes(opt) ? 'border-orange-500 text-orange-600 bg-orange-50/10 font-black' : 'border-slate-100 text-slate-400 bg-white'
+                                            }`}
+                                    >
+                                        {opt === 'low' ? 'Baja' : opt === 'medium' ? 'Media' : 'Alta'}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="flex items-center justify-between border-t border-slate-50 pt-3">
-                        <span className="text-xs font-bold text-slate-600">¿Tienes patio en casa?</span>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={hasYard}
-                                onChange={(e) => setHasYard(e.target.checked)}
-                                className="sr-only peer"
-                            />
-                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
-                        </label>
-                    </div>
-
-                    {successMessage && (
-                        <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold p-3 rounded-xl flex items-center gap-2 animate-in fade-in duration-200">
-                            <CheckCircle2 size={16} />
-                            <span>Cambios guardados con éxito.</span>
+                        <div className="space-y-2 text-left">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Etapa de Vida</span>
+                            <div className="grid grid-cols-3 gap-2">
+                                {['young', 'adult', 'senior'].map((opt) => (
+                                    <button
+                                        key={opt}
+                                        onClick={() => handleTogglePreference(opt, lifeStage, setLifeStage)}
+                                        className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${lifeStage.includes(opt) ? 'border-orange-500 text-orange-600 bg-orange-50/10 font-black' : 'border-slate-100 text-slate-400 bg-white'
+                                            }`}
+                                    >
+                                        {opt === 'young' ? 'Joven' : opt === 'adult' ? 'Adulto' : 'Mayor'}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    )}
 
-                    <button
-                        onClick={handleSaveChanges}
-                        disabled={saving}
-                        className="w-full py-3.5 bg-slate-800 text-white font-bold rounded-2xl text-sm transition-all hover:bg-slate-900 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                        {saving && <Loader2 size={16} className="animate-spin" />}
-                        Guardar Cambios
-                    </button>
-                </div>
+                        <div className="flex items-center justify-between border-t border-slate-50 pt-3">
+                            <span className="text-xs font-bold text-slate-600">¿Tienes patio en casa?</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={hasYard}
+                                    onChange={(e) => setHasYard(e.target.checked)}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+                            </label>
+                        </div>
+
+                        {successMessage && (
+                            <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold p-3 rounded-xl flex items-center gap-2 animate-in fade-in duration-200">
+                                <CheckCircle2 size={16} />
+                                <span>Cambios guardados con éxito.</span>
+                            </div>
+                        )}
+
+                        <button
+                            onClick={handleSaveChanges}
+                            disabled={saving}
+                            className="w-full py-3.5 bg-slate-800 text-white font-bold rounded-2xl text-sm transition-all hover:bg-slate-900 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {saving && <Loader2 size={16} className="animate-spin" />}
+                            Guardar Cambios
+                        </button>
+                    </div>
+                )}
 
                 <div className="space-y-2.5">
                     <button

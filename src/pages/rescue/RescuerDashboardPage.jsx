@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { MapPin, Clock, Loader2, CheckCircle2, AlertTriangle, X, Search } from 'lucide-react';
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const STATUS_MAPPER = {
     pending: { label: "Reportado", color: "bg-red-50 text-red-600 border-red-100" },
@@ -186,115 +186,121 @@ const RescuerDashboardPage = () => {
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">No hay casos en este segmento</p>
                     </div>
                 ) : (
-                    displayedCases.map((caseItem) => (
-                        <div key={caseItem.id} className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden flex flex-col">
-                            <div className="w-full aspect-video bg-slate-100 relative">
-                                <img
-                                    src={caseItem.imageUrl || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop-60&w=800"}
-                                    alt="Contexto de la emergencia"
-                                    className="w-full h-full object-cover"
-                                />
-                                <span className={`absolute top-3 right-3 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-md ${STATUS_MAPPER[caseItem.status]?.color}`}>
-                                    {STATUS_MAPPER[caseItem.status]?.label}
-                                </span>
-                            </div>
+                    displayedCases.map((caseItem) => {
+                        const sanitizedImageUrl = caseItem.imageUrl && caseItem.imageUrl.startsWith('http://localhost:8000')
+                            ? caseItem.imageUrl.replace('http://localhost:8000', API_BASE_URL)
+                            : caseItem.imageUrl;
 
-                            <div className="p-4 space-y-3">
-                                <div className="space-y-1 text-left">
-                                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-                                        <MapPin size={14} className="text-orange-500 shrink-0" />
-                                        <span className="truncate">{caseItem.location}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-5">
-                                        <Clock size={12} /> {caseItem.timeAgo}
-                                    </div>
+                        return (
+                            <div key={caseItem.id} className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden flex flex-col">
+                                <div className="w-full aspect-video bg-slate-100 relative">
+                                    <img
+                                        src={sanitizedImageUrl || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop-60&w=800"}
+                                        alt="Contexto de la emergencia"
+                                        className="w-full h-full object-cover"
+                                    />
+                                    <span className={`absolute top-3 right-3 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-md ${STATUS_MAPPER[caseItem.status]?.color}`}>
+                                        {STATUS_MAPPER[caseItem.status]?.label}
+                                    </span>
                                 </div>
 
-                                {caseItem.description && (
-                                    <p className="text-xs font-medium text-slate-500 leading-relaxed bg-slate-50 p-3 rounded-2xl border border-slate-100/40 text-left">
-                                        {caseItem.description}
-                                    </p>
-                                )}
-
-                                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                                    {caseItem.tags && caseItem.tags.map((tag, idx) => (
-                                        <span key={idx} className="text-[9px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md border border-slate-200/30 uppercase tracking-wide">
-                                            #{tag}
-                                        </span>
-                                    ))}
-                                </div>
-
-                                <div className="pt-1">
-                                    {caseItem.status === 'pending' && (
-                                        <button
-                                            onClick={() => triggerStatusModal(
-                                                caseItem.id,
-                                                'in_progress',
-                                                '¿Atender esta emergencia?',
-                                                'Al confirmar, el caso se asignará a tu perfil en curso y la comunidad sabrá que el rescate va en camino.',
-                                                'Confirmar',
-                                                'bg-orange-500 hover:bg-orange-600'
-                                            )}
-                                            disabled={processingId === caseItem.id}
-                                            className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs uppercase tracking-widest rounded-2xl transition-all active:scale-[0.99] flex items-center justify-center gap-1 shadow-sm"
-                                        >
-                                            {processingId === caseItem.id ? <Loader2 size={14} className="animate-spin" /> : 'Atender Caso'}
-                                        </button>
-                                    )}
-
-                                    {caseItem.status === 'in_progress' && (
-                                        <div className="flex flex-col gap-2">
-                                            <button
-                                                onClick={() => triggerStatusModal(
-                                                    caseItem.id,
-                                                    'rescued',
-                                                    '¿Declarar caso Rescatado?',
-                                                    'Confirma que has resguardado al animal de forma segura y exitosa para actualizar el reporte.',
-                                                    'Rescatado',
-                                                    'bg-teal-500 hover:bg-teal-600'
-                                                )}
-                                                disabled={processingId === caseItem.id}
-                                                className="w-full py-3 bg-teal-500 hover:bg-teal-600 text-white font-bold text-xs uppercase tracking-widest rounded-2xl transition-all active:scale-[0.99] flex items-center justify-center gap-1 shadow-sm"
-                                            >
-                                                {processingId === caseItem.id ? <Loader2 size={14} className="animate-spin" /> : 'Marcar como Rescatado'}
-                                            </button>
-                                            <button
-                                                onClick={() => triggerStatusModal(
-                                                    caseItem.id,
-                                                    'not_found',
-                                                    '¿Animal no localizado?',
-                                                    'Utiliza esta opción si acudiste al sector del reporte pero el animal ya no se encuentra en el lugar.',
-                                                    'No Localizado',
-                                                    'bg-slate-500 hover:bg-slate-600'
-                                                )}
-                                                disabled={processingId === caseItem.id}
-                                                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold text-xs uppercase tracking-widest rounded-2xl transition-all active:scale-[0.99] flex items-center justify-center gap-1 shadow-sm border border-slate-200/60"
-                                            >
-                                                Animal No Localizado
-                                            </button>
+                                <div className="p-4 space-y-3">
+                                    <div className="space-y-1 text-left">
+                                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                                            <MapPin size={14} className="text-orange-500 shrink-0" />
+                                            <span className="truncate">{caseItem.location}</span>
                                         </div>
+                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-5">
+                                            <Clock size={12} /> {caseItem.timeAgo}
+                                        </div>
+                                    </div>
+
+                                    {caseItem.description && (
+                                        <p className="text-xs font-medium text-slate-500 leading-relaxed bg-slate-50 p-3 rounded-2xl border border-slate-100/40 text-left">
+                                            {caseItem.description}
+                                        </p>
                                     )}
 
-                                    {caseItem.status === 'rescued' && (
-                                        <button
-                                            onClick={() => triggerStatusModal(
-                                                caseItem.id,
-                                                'in_shelter',
-                                                '¿Ingresar a un Refugio?',
-                                                'Confirma el traslado y entrada física de la mascota a las instalaciones de una fundación asociada.',
-                                                'Ingresar',
-                                                'bg-blue-500 hover:bg-blue-600'
-                                            )}
-                                            disabled={processingId === caseItem.id}
-                                            className="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs uppercase tracking-widest rounded-2xl transition-all active:scale-[0.99] flex items-center justify-center gap-1 shadow-sm"
-                                        >
-                                            {processingId === caseItem.id ? <Loader2 size={14} className="animate-spin" /> : 'Ingresar a un Refugio'}
-                                        </button>
-                                    )}
+                                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                        {caseItem.tags && caseItem.tags.map((tag, idx) => (
+                                            <span key={idx} className="text-[9px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md border border-slate-200/30 uppercase tracking-wide">
+                                                #{tag}
+                                            </span>
+                                        ))}
+                                    </div>
+
+                                    <div className="pt-1">
+                                        {caseItem.status === 'pending' && (
+                                            <button
+                                                onClick={() => triggerStatusModal(
+                                                    caseItem.id,
+                                                    'in_progress',
+                                                    '¿Atender esta emergencia?',
+                                                    'Al confirmar, el caso se asignará a tu perfil en curso y la comunidad sabrá que el rescate va en camino.',
+                                                    'Confirmar',
+                                                    'bg-orange-500 hover:bg-orange-600'
+                                                )}
+                                                disabled={processingId === caseItem.id}
+                                                className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs uppercase tracking-widest rounded-2xl transition-all active:scale-[0.99] flex items-center justify-center gap-1 shadow-sm"
+                                            >
+                                                {processingId === caseItem.id ? <Loader2 size={14} className="animate-spin" /> : 'Atender Caso'}
+                                            </button>
+                                        )}
+
+                                        {caseItem.status === 'in_progress' && (
+                                            <div className="flex flex-col gap-2">
+                                                <button
+                                                    onClick={() => triggerStatusModal(
+                                                        caseItem.id,
+                                                        'rescued',
+                                                        '¿Declarar caso Rescatado?',
+                                                        'Confirma que has resguardado al animal de forma segura y exitosa para actualizar el reporte.',
+                                                        'Rescatado',
+                                                        'bg-teal-500 hover:bg-teal-600'
+                                                    )}
+                                                    disabled={processingId === caseItem.id}
+                                                    className="w-full py-3 bg-teal-500 hover:bg-teal-600 text-white font-bold text-xs uppercase tracking-widest rounded-2xl transition-all active:scale-[0.99] flex items-center justify-center gap-1 shadow-sm"
+                                                >
+                                                    {processingId === caseItem.id ? <Loader2 size={14} className="animate-spin" /> : 'Marcar como Rescatado'}
+                                                </button>
+                                                <button
+                                                    onClick={() => triggerStatusModal(
+                                                        caseItem.id,
+                                                        'not_found',
+                                                        '¿Animal no localizado?',
+                                                        'Utiliza esta opción si acudiste al sector del reporte pero el animal ya no se encuentra en el lugar.',
+                                                        'No Localizado',
+                                                        'bg-slate-500 hover:bg-slate-600'
+                                                    )}
+                                                    disabled={processingId === caseItem.id}
+                                                    className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold text-xs uppercase tracking-widest rounded-2xl transition-all active:scale-[0.99] flex items-center justify-center gap-1 shadow-sm border border-slate-200/60"
+                                                >
+                                                    Animal No Localizado
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {caseItem.status === 'rescued' && (
+                                            <button
+                                                onClick={() => triggerStatusModal(
+                                                    caseItem.id,
+                                                    'in_shelter',
+                                                    '¿Ingresar a un Refugio?',
+                                                    'Confirma el traslado y entrada física de la mascota a las instalaciones de una fundación asociada.',
+                                                    'Ingresar',
+                                                    'bg-blue-500 hover:bg-blue-600'
+                                                )}
+                                                disabled={processingId === caseItem.id}
+                                                className="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs uppercase tracking-widest rounded-2xl transition-all active:scale-[0.99] flex items-center justify-center gap-1 shadow-sm"
+                                            >
+                                                {processingId === caseItem.id ? <Loader2 size={14} className="animate-spin" /> : 'Ingresar a un Refugio'}
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
 

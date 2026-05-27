@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Plus, Search, X, Heart, ShieldCheck, RefreshCw, Calendar, FileText, ArrowRight, CheckCircle2, Loader2, Camera } from 'lucide-react';
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const STATUS_CONFIG = {
     draft: { label: "Oculto / Borrador", classes: "bg-slate-100 text-slate-500 border-slate-200" },
@@ -158,8 +158,7 @@ const FoundationDashboardPage = () => {
                 method: 'POST',
                 body: multipartBody,
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    'Authorization': `Bearer ${token}`
                 }
             });
             if (response.ok) {
@@ -174,6 +173,7 @@ const FoundationDashboardPage = () => {
     };
 
     const handleDirectStatusChange = async (animal, nextStatus) => {
+        const token = localStorage.getItem('access_token');
         const multipartBody = new FormData();
         multipartBody.append('name', animal.name);
         multipartBody.append('animal_type', animal.type);
@@ -188,8 +188,7 @@ const FoundationDashboardPage = () => {
                 method: 'POST',
                 body: multipartBody,
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    'Authorization': `Bearer ${token}`
                 }
             });
             if (response.ok) {
@@ -214,8 +213,7 @@ const FoundationDashboardPage = () => {
                 method: 'POST',
                 body: multipartBody,
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    'Authorization': `Bearer ${token}`
                 }
             });
             if (response.ok) {
@@ -316,93 +314,99 @@ const FoundationDashboardPage = () => {
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">No se encontraron registros</p>
                     </div>
                 ) : (
-                    filteredAnimals.map((animal) => (
-                        <div
-                            key={animal.id}
-                            onClick={() => handleOpenEditModal(animal)}
-                            className="bg-white border border-slate-100 p-4 rounded-3xl shadow-sm flex flex-col gap-3 cursor-pointer transition-all hover:border-slate-200/80 group text-left"
-                        >
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center text-xl border border-teal-100/60 font-sans group-hover:scale-105 transition-transform overflow-hidden shrink-0">
-                                        {animal.photo && animal.photo.startsWith('http') ? (
-                                            <img src={animal.photo} alt="" className="w-full h-full object-cover" />
-                                        ) : (
-                                            animal.photo || '🐾'
-                                        )}
+                    filteredAnimals.map((animal) => {
+                        const sanitizedPhotoUrl = animal.photo && animal.photo.startsWith('http://localhost:8000')
+                            ? animal.photo.replace('http://localhost:8000', API_BASE_URL)
+                            : animal.photo;
+
+                        return (
+                            <div
+                                key={animal.id}
+                                onClick={() => handleOpenEditModal(animal)}
+                                className="bg-white border border-slate-100 p-4 rounded-3xl shadow-sm flex flex-col gap-3 cursor-pointer transition-all hover:border-slate-200/80 group text-left"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center text-xl border border-teal-100/60 font-sans group-hover:scale-105 transition-transform overflow-hidden shrink-0">
+                                            {sanitizedPhotoUrl && sanitizedPhotoUrl.startsWith('http') ? (
+                                                <img src={sanitizedPhotoUrl} alt="" className="w-full h-full object-cover" />
+                                            ) : (
+                                                animal.photo || '🐾'
+                                            )}
+                                        </div>
+                                        <div className="text-left">
+                                            <h3 className="font-bold text-slate-800 text-sm tracking-tight group-hover:text-teal-600 transition-colors">{animal.name}</h3>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                                                {animal.type} • {animal.size === 'small' ? 'Pequeño' : animal.size === 'medium' ? 'Mediano' : 'Grande'}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="text-left">
-                                        <h3 className="font-bold text-slate-800 text-sm tracking-tight group-hover:text-teal-600 transition-colors">{animal.name}</h3>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
-                                            {animal.type} • {animal.size === 'small' ? 'Pequeño' : animal.size === 'medium' ? 'Mediano' : 'Grande'}
-                                        </p>
-                                    </div>
+                                    <span className="text-[9px] font-black border px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0 bg-slate-50 border-slate-200">
+                                        {STATUS_CONFIG[animal.status]?.label || "Oculto / Borrador"}
+                                    </span>
                                 </div>
-                                <span className="text-[9px] font-black border px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0 bg-slate-50 border-slate-200">
-                                    {STATUS_CONFIG[animal.status]?.label || "Oculto / Borrador"}
-                                </span>
-                            </div>
 
-                            {animal.description && (
-                                <p className="text-xs font-medium text-slate-500 leading-relaxed bg-slate-50/60 p-2.5 rounded-xl border border-slate-100/40 text-left">
-                                    {animal.description}
-                                </p>
-                            )}
-
-                            <div className="flex items-center justify-between border-t border-slate-50 pt-2 gap-2">
-                                {animal.status === 'adopted' ? (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleOpenFollowUpModal(animal); }}
-                                        className="py-2 px-3 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all border border-purple-200/40 flex items-center gap-1 shrink-0"
-                                    >
-                                        <FileText size={12} /> Seguimiento
-                                    </button>
-                                ) : (
-                                    <div className="flex items-center gap-1 text-[10px] font-black text-teal-600 bg-teal-50/60 px-2 py-1 rounded-lg border border-teal-100/30 shrink-0">
-                                        <Heart size={12} className="fill-current" /> {animal.matchesCount} interesados
-                                    </div>
+                                {animal.description && (
+                                    <p className="text-xs font-medium text-slate-500 leading-relaxed bg-slate-50/60 p-2.5 rounded-xl border border-slate-100/40 text-left">
+                                        {animal.description}
+                                    </p>
                                 )}
 
-                                <div className="flex items-center gap-1.5 ml-auto">
-                                    {animal.status === 'draft' && (
+                                <div className="flex items-center justify-between border-t border-slate-50 pt-2 gap-2">
+                                    {animal.status === 'adopted' ? (
                                         <button
-                                            onClick={(e) => { e.stopPropagation(); handleDirectStatusChange(animal, 'available'); }}
-                                            className="py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-1 shadow-sm shrink-0"
+                                            onClick={(e) => { e.stopPropagation(); handleOpenFollowUpModal(animal); }}
+                                            className="py-2 px-3 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all border border-purple-200/40 flex items-center gap-1 shrink-0"
                                         >
-                                            Publicar <CheckCircle2 size={10} />
+                                            <FileText size={12} /> Seguimiento
                                         </button>
+                                    ) : (
+                                        <div className="flex items-center gap-1 text-[10px] font-black text-teal-600 bg-teal-50/60 px-2 py-1 rounded-lg border border-teal-100/30 shrink-0">
+                                            <Heart size={12} className="fill-current" /> {animal.matchesCount} interesados
+                                        </div>
                                     )}
 
-                                    {animal.status === 'available' && (
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleDirectStatusChange(animal, 'in_progress'); }}
-                                            className="py-1.5 px-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-1 shadow-sm shrink-0"
-                                        >
-                                            Proceso <ArrowRight size={10} />
-                                        </button>
-                                    )}
+                                    <div className="flex items-center gap-1.5 ml-auto">
+                                        {animal.status === 'draft' && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleDirectStatusChange(animal, 'available'); }}
+                                                className="py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-1 shadow-sm shrink-0"
+                                            >
+                                                Publicar <CheckCircle2 size={10} />
+                                            </button>
+                                        )}
 
-                                    {animal.status === 'in_progress' && (
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleDirectStatusChange(animal, 'adopted'); }}
-                                            className="py-1.5 px-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-1 shadow-sm shrink-0"
-                                        >
-                                            Adoptado <CheckCircle2 size={10} />
-                                        </button>
-                                    )}
+                                        {animal.status === 'available' && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleDirectStatusChange(animal, 'in_progress'); }}
+                                                className="py-1.5 px-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-1 shadow-sm shrink-0"
+                                            >
+                                                Proceso <ArrowRight size={10} />
+                                            </button>
+                                        )}
 
-                                    {(animal.status === 'in_progress' || animal.status === 'adopted') && (
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleDirectStatusChange(animal, 'draft'); }}
-                                            className="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all border border-slate-200/60 flex items-center gap-1 shrink-0"
-                                        >
-                                            <RefreshCw size={10} /> Reactivar
-                                        </button>
-                                    )}
+                                        {animal.status === 'in_progress' && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleDirectStatusChange(animal, 'adopted'); }}
+                                                className="py-1.5 px-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all flex items-center gap-1 shadow-sm shrink-0"
+                                            >
+                                                Adoptado <CheckCircle2 size={10} />
+                                            </button>
+                                        )}
+
+                                        {(animal.status === 'in_progress' || animal.status === 'adopted') && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleDirectStatusChange(animal, 'draft'); }}
+                                                className="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all border border-slate-200/60 flex items-center gap-1 shrink-0"
+                                            >
+                                                <RefreshCw size={10} /> Reactivar
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
 

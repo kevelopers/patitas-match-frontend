@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { MapPin, Clock, Heart, Share2, AlertCircle, CheckCircle, Navigation, Loader2 } from 'lucide-react';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const STATUS_DICTIONARY = {
@@ -68,14 +69,17 @@ const FeedPost = ({ post }) => {
 
     const executeBackendLikeAction = async (actionPath) => {
         const cleanIntegerId = post.id.replace('report_', '');
+        const token = localStorage.getItem('access_token');
+        const headers = { 'Content-Type': 'application/json' };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
         try {
-            const token = localStorage.getItem('access_token');
             await fetch(`${API_BASE_URL}/rescues/${cleanIntegerId}/${actionPath}`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+                headers: headers
             });
         } catch (error) {
             console.error(error);
@@ -148,6 +152,10 @@ const FeedPost = ({ post }) => {
         return 'bg-slate-100/80 border-slate-200';
     };
 
+    const sanitizedImageUrl = post.imageUrl && post.imageUrl.startsWith('http://localhost:8000')
+        ? post.imageUrl.replace('http://localhost:8000', API_BASE_URL)
+        : post.imageUrl;
+
     return (
         <article className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-6">
             <div className="p-4 flex items-center justify-between">
@@ -171,7 +179,7 @@ const FeedPost = ({ post }) => {
                 onClick={handleImageTapDetection}
             >
                 <img
-                    src={post.imageUrl || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop-60&w=800"}
+                    src={sanitizedImageUrl || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop-60&w=800"}
                     alt="Animal reportado"
                     className="absolute inset-0 w-full h-full object-cover z-10"
                     loading="lazy"
@@ -276,13 +284,17 @@ const HomePage = () => {
     const loadFeedData = async () => {
         setLoading(true);
         setError(false);
+
+        const token = localStorage.getItem('access_token');
+        const headers = {};
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
         try {
-            const token = localStorage.getItem('access_token');
             const response = await fetch(`${API_BASE_URL}/rescues`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+                headers: headers
             });
             if (!response.ok) throw new Error();
             const data = await response.json();
