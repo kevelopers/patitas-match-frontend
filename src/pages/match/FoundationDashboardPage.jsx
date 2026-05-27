@@ -36,8 +36,11 @@ const FoundationDashboardPage = () => {
     const fetchAnimalsData = async () => {
         if (!user?.id) return;
         try {
+            const token = localStorage.getItem('access_token');
             const response = await fetch(`${API_BASE_URL}/animals/foundation/${user.id}`, {
-                credentials: 'include'
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             });
             if (response.ok) {
                 const data = await response.json();
@@ -114,10 +117,13 @@ const FoundationDashboardPage = () => {
         }
 
         try {
+            const token = localStorage.getItem('access_token');
             const response = await fetch(`${API_BASE_URL}/animals`, {
                 method: 'POST',
-                body: multipartBody,
-                credentials: 'include'
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: multipartBody
             });
             if (response.ok) {
                 await fetchAnimalsData();
@@ -147,10 +153,13 @@ const FoundationDashboardPage = () => {
         }
 
         try {
+            const token = localStorage.getItem('access_token');
             const response = await fetch(`${API_BASE_URL}/animals/${selectedAnimal.id}/update`, {
                 method: 'POST',
                 body: multipartBody,
-                credentials: 'include'
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                }
             });
             if (response.ok) {
                 await fetchAnimalsData();
@@ -177,7 +186,10 @@ const FoundationDashboardPage = () => {
             const response = await fetch(`${API_BASE_URL}/animals/${animal.id}/update`, {
                 method: 'POST',
                 body: multipartBody,
-                credentials: 'include'
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             });
             if (response.ok) {
                 await fetchAnimalsData();
@@ -196,10 +208,14 @@ const FoundationDashboardPage = () => {
         multipartBody.append('text', logText);
 
         try {
+            const token = localStorage.getItem('access_token');
             const response = await fetch(`${API_BASE_URL}/animals/${selectedAnimal.id}/logs`, {
                 method: 'POST',
                 body: multipartBody,
-                credentials: 'include'
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             });
             if (response.ok) {
                 const newLog = await response.json();

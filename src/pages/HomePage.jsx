@@ -69,9 +69,13 @@ const FeedPost = ({ post }) => {
     const executeBackendLikeAction = async (actionPath) => {
         const cleanIntegerId = post.id.replace('report_', '');
         try {
+            const token = localStorage.getItem('access_token');
             await fetch(`${API_BASE_URL}/rescues/${cleanIntegerId}/${actionPath}`, {
                 method: 'POST',
-                credentials: 'include'
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             });
         } catch (error) {
             console.error(error);
@@ -273,8 +277,12 @@ const HomePage = () => {
         setLoading(true);
         setError(false);
         try {
+            const token = localStorage.getItem('access_token');
             const response = await fetch(`${API_BASE_URL}/rescues`, {
-                credentials: 'include'
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             });
             if (!response.ok) throw new Error();
             const data = await response.json();

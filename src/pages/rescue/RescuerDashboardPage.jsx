@@ -95,14 +95,17 @@ const RescuerDashboardPage = () => {
         const cleanIntegerId = reportId.replace('report_', '');
 
         try {
+            const token = localStorage.getItem('access_token');
             const response = await fetch(`${API_BASE_URL}/rescues/${cleanIntegerId}/status`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     status: nextStatus,
                     ...shelterPayload
-                }),
-                credentials: 'include'
+                })
             });
             if (response.ok) {
                 setAllCases(prev => prev.map(c => c.id === reportId ? { ...c, status: nextStatus, rescuerId: user?.id } : c));

@@ -52,8 +52,12 @@ const MatchPage = () => {
         setIsLoading(true);
         setError(null);
         try {
+            const token = localStorage.getItem('access_token');
             const response = await fetch(`${API_BASE_URL}/animals/discovery`, {
-                credentials: 'include'
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             });
             if (!response.ok) throw new Error("Error loading data");
             const matchStack = await response.json();
@@ -74,9 +78,13 @@ const MatchPage = () => {
     const handleMatch = async () => {
         const targetAnimal = animals[0];
         try {
+            const token = localStorage.getItem('access_token');
             const response = await fetch(`${API_BASE_URL}/animals/${targetAnimal.id}/match`, {
                 method: "POST",
-                credentials: 'include'
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             });
             if (response.ok) {
                 const result = await response.json();
@@ -97,9 +105,13 @@ const MatchPage = () => {
         const targetAnimal = animals[0];
         handleNext();
         try {
+            const token = localStorage.getItem('access_token');
             await fetch(`${API_BASE_URL}/animals/${targetAnimal.id}/reject`, {
                 method: "POST",
-                credentials: 'include'
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             });
         } catch (err) {
             console.error(err);

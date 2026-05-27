@@ -53,11 +53,14 @@ const PrivacySettingsPage = ({ onBack }) => {
         };
 
         try {
+            const token = localStorage.getItem('access_token');
             const response = await fetch(`${API_BASE_URL}/users/profile/privacy`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-                credentials: 'include'
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
             });
 
             if (response.ok) {

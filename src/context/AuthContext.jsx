@@ -9,15 +9,23 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     const checkAuthStatus = async () => {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            setUser(null);
+            setIsAuthenticated(false);
+            setLoading(false);
+            return;
+        }
         try {
             const response = await fetch(`${API_BASE_URL}/users/profile`, {
-                credentials: 'include'
+                headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
                 const data = await response.json();
                 setUser(data);
                 setIsAuthenticated(true);
             } else {
+                localStorage.removeItem('access_token');
                 setUser(null);
                 setIsAuthenticated(false);
             }
@@ -37,8 +45,7 @@ export const AuthProvider = ({ children }) => {
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password }),
-            credentials: 'include'
+            body: JSON.stringify({ username, password })
         });
 
         if (!response.ok) {
@@ -46,6 +53,10 @@ export const AuthProvider = ({ children }) => {
             throw new Error(errorData.detail || 'Credenciales incorrectas');
         }
 
+        const data = await response.json();
+        if (data.access_token) {
+            localStorage.setItem('access_token', data.access_token);
+        }
         await checkAuthStatus();
     };
 
@@ -53,21 +64,23 @@ export const AuthProvider = ({ children }) => {
         const response = await fetch(`${API_BASE_URL}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password, name, role, phone }),
-            credentials: 'include'
+            body: JSON.stringify({ username, password, name, role, phone })
         });
 
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.detail || 'Error en el registro');
         }
+
+        const data = await response.json();
+        if (data.access_token) {
+            localStorage.setItem('access_token', data.access_token);
+        }
+        await checkAuthStatus();
     };
 
     const logout = async () => {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
-            method: 'POST',
-            credentials: 'include'
-        });
+        localStorage.removeItem('access_token');
         setUser(null);
         setIsAuthenticated(false);
     };

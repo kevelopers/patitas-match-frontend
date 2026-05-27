@@ -88,10 +88,14 @@ const RescuePage = () => {
         formData.append("image", imageFile);
 
         try {
+            const token = localStorage.getItem('access_token');
             const response = await fetch(`${API_BASE_URL}/rescues`, {
                 method: "POST",
                 body: formData,
-                credentials: "include"
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             });
 
             if (!response.ok) {

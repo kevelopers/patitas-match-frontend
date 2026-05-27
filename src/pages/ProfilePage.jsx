@@ -36,17 +36,20 @@ const ProfilePage = ({ onNavigateToPrivacy }) => {
     const handleSaveChanges = async () => {
         setSaving(true);
         try {
+            const token = localStorage.getItem('access_token');
             const response = await fetch(`${API_BASE_URL}/users/profile/preferences`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     size,
                     energy_level: energyLevel,
                     life_stage: lifeStage,
                     has_yard: hasYard,
                     role: user.role
-                }),
-                credentials: 'include'
+                })
             });
 
             if (response.ok) {
