@@ -56,7 +56,7 @@ const RescuePage = () => {
         try {
             const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5`);
             const payload = await response.json();
-            setLocationSuggestions(payload);
+            locationSuggestions(payload);
         } catch {
             setLocationSuggestions([]);
         } finally {
@@ -159,15 +159,15 @@ const RescuePage = () => {
                         disabled={simulationState === "uploading"}
                     />
                     {imagePreview ? (
-                        <img src={imagePreview} alt="Rescue Target" className="w-full h-full object-cover" />
+                        <img src={imagePreview} alt="Rescue Target" className="w-full h-full object-cover pointer-events-none" />
                     ) : (
-                        <div className="flex flex-col items-center text-slate-400">
+                        <div className="flex flex-col items-center text-slate-400 pointer-events-none">
                             <Camera size={36} className="mb-2 text-teal-500" />
                             <span className="font-bold text-xs tracking-wide">Subir foto del animal</span>
                         </div>
                     )}
                     {simulationState === "uploading" && (
-                        <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm flex flex-col items-center justify-center text-white">
+                        <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm flex flex-col items-center justify-center text-white pointer-events-none">
                             <Loader2 size={32} className="animate-spin mb-3 text-teal-400" />
                             <span className="font-semibold text-sm animate-pulse tracking-wide">IA Procesando Imagen...</span>
                         </div>
