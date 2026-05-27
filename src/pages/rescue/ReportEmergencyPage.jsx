@@ -17,10 +17,8 @@ const RescuePage = () => {
     const [mapCoordinates, setMapCoordinates] = useState({ lat: 10.4806, lng: -66.9036 });
 
     const [locationSuggestions, setLocationSuggestions] = useState([]);
-    const [isSearchingSuggestions, setIsSearchingSuggestions] = useState(false);
 
     const searchDebounceRef = useRef(null);
-    const fileInputRef = useRef(null);
 
     useEffect(() => {
         return () => {
@@ -29,34 +27,13 @@ const RescuePage = () => {
     }, []);
 
     const handleImageSelection = (event) => {
-        console.log("=== [DEBUG] handleImageSelection ejecutado ===");
         const file = event.target.files[0];
         if (file) {
-            console.log("=== [DEBUG] Archivo detectado ===", {
-                name: file.name,
-                size: file.size,
-                type: file.type
-            });
             setImageFile(file);
             setImagePreview(URL.createObjectURL(file));
             setSimulationState("idle");
             setAiTags("");
             setErrorMessage("");
-        } else {
-            console.log("=== [DEBUG] No se seleccionó ningún archivo ===");
-        }
-        event.target.value = null;
-    };
-
-    const handleTriggerFileSelect = (e) => {
-        e.preventDefault();
-        console.log("=== [DEBUG] Click detectado en el contenedor de imagen ===");
-
-        if (fileInputRef.current) {
-            console.log("=== [DEBUG] Ejecutando click() programático en el input oculto ===");
-            fileInputRef.current.click();
-        } else {
-            console.log("=== [DEBUG] ERROR: fileInputRef.current es NULL ===");
         }
     };
 
@@ -65,15 +42,12 @@ const RescuePage = () => {
             setLocationSuggestions([]);
             return;
         }
-        setIsSearchingSuggestions(true);
         try {
             const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5`);
             const payload = await response.json();
-            locationSuggestions(payload);
+            setLocationSuggestions(payload);
         } catch {
             setLocationSuggestions([]);
-        } finally {
-            setIsSearchingSuggestions(false);
         }
     };
 
@@ -159,14 +133,12 @@ const RescuePage = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5 max-w-sm w-full mx-auto relative">
-                <div
-                    onClick={handleTriggerFileSelect}
-                    className="relative w-full aspect-video bg-white rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden cursor-pointer active:scale-[0.98] transition-transform shadow-[0_4px_12px_rgba(0,0,0,0.02)] shrink-0"
-                >
+                {/* Contenedor funcional nativo */}
+                <label className="relative w-full aspect-video bg-white rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden cursor-pointer active:scale-[0.98] transition-transform shadow-[0_4px_12px_rgba(0,0,0,0.02)] shrink-0">
                     <input
-                        ref={fileInputRef}
                         type="file"
                         accept="image/*"
+                        capture="environment"
                         className="hidden"
                         onChange={handleImageSelection}
                         disabled={simulationState === "uploading"}
@@ -185,7 +157,7 @@ const RescuePage = () => {
                             <span className="font-semibold text-sm animate-pulse tracking-wide">IA Procesando Imagen...</span>
                         </div>
                     )}
-                </div>
+                </label>
 
                 <div className="flex gap-2 relative z-30 shrink-0">
                     <div className="relative flex-1">
