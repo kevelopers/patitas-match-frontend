@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { MapPin, Clock, Loader2, CheckCircle2, AlertTriangle, X, Search } from 'lucide-react';
+import { MapPin, Clock, Loader2, CheckCircle2, AlertTriangle, X, Search, Map } from 'lucide-react';
+import ActiveRescueMap from '../../components/ActiveRescueMap';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -20,6 +21,7 @@ const RescuerDashboardPage = () => {
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState(null);
     const [foundations, setFoundations] = useState([]);
+    const [activeMapCase, setActiveMapCase] = useState(null);
 
     const [modalConfig, setModalConfig] = useState({
         isOpen: false,
@@ -124,6 +126,20 @@ const RescuerDashboardPage = () => {
             external_shelter_details: isExternal ? externalDetails : null
         };
         handleUpdateCaseStatus(shelterCaseId, 'in_shelter', payload);
+    };
+
+    const parseLocationCoordinates = (locationString) => {
+        if (!locationString) return { lat: 10.4806, lng: -66.9036 };
+        const cleanString = locationString.trim();
+        const parts = cleanString.split(',');
+        if (parts.length === 2) {
+            const lat = parseFloat(parts[0]);
+            const lng = parseFloat(parts[1]);
+            if (!isNaN(lat) && !isNaN(lng)) {
+                return { lat, lng };
+            }
+        }
+        return { lat: 10.4806, lng: -66.9036 };
     };
 
     const filterCasesByActiveTab = () => {
@@ -249,6 +265,12 @@ const RescuerDashboardPage = () => {
 
                                         {caseItem.status === 'in_progress' && (
                                             <div className="flex flex-col gap-2">
+                                                <button
+                                                    onClick={() => setActiveMapCase(caseItem)}
+                                                    className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs uppercase tracking-widest rounded-2xl transition-all active:scale-[0.99] flex items-center justify-center gap-1.5 shadow-sm"
+                                                >
+                                                    <Map size={14} /> Ver Ubicación GPS
+                                                </button>
                                                 <button
                                                     onClick={() => triggerStatusModal(
                                                         caseItem.id,
@@ -410,6 +432,15 @@ const RescuerDashboardPage = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {activeMapCase && (
+                <ActiveRescueMap
+                    targetLat={parseLocationCoordinates(activeMapCase.location).lat}
+                    targetLng={parseLocationCoordinates(activeMapCase.location).lng}
+                    animalName={activeMapCase.tags?.[0] || "Alerta de Rescate"}
+                    onClose={() => setActiveMapCase(null)}
+                />
             )}
         </div>
     );

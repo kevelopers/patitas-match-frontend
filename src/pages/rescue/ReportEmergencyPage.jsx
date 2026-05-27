@@ -18,7 +18,9 @@ const RescuePage = () => {
 
     const [locationSuggestions, setLocationSuggestions] = useState([]);
     const [isSearchingSuggestions, setIsSearchingSuggestions] = useState(false);
+
     const searchDebounceRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         return () => {
@@ -36,6 +38,13 @@ const RescuePage = () => {
             setErrorMessage("");
         }
         event.target.value = null;
+    };
+
+    const handleTriggerFileSelect = (e) => {
+        e.preventDefault();
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
+        }
     };
 
     const queryExternalLocations = async (searchQuery) => {
@@ -137,8 +146,12 @@ const RescuePage = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5 max-w-sm w-full mx-auto relative">
-                <label className="relative w-full aspect-video bg-white rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden cursor-pointer active:scale-[0.98] transition-transform shadow-[0_4px_12px_rgba(0,0,0,0.02)] shrink-0">
+                <div
+                    onClick={handleTriggerFileSelect}
+                    className="relative w-full aspect-video bg-white rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden cursor-pointer active:scale-[0.98] transition-transform shadow-[0_4px_12px_rgba(0,0,0,0.02)] shrink-0"
+                >
                     <input
+                        ref={fileInputRef}
                         type="file"
                         accept="image/*"
                         className="hidden"
@@ -159,7 +172,7 @@ const RescuePage = () => {
                             <span className="font-semibold text-sm animate-pulse tracking-wide">IA Procesando Imagen...</span>
                         </div>
                     )}
-                </label>
+                </div>
 
                 <div className="flex gap-2 relative z-30 shrink-0">
                     <div className="relative flex-1">

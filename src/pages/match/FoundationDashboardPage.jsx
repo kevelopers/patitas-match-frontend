@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Plus, Search, X, Heart, ShieldCheck, RefreshCw, Calendar, FileText, ArrowRight, CheckCircle2, Loader2, Camera } from 'lucide-react';
 
@@ -28,6 +28,8 @@ const FoundationDashboardPage = () => {
     const [logText, setLogText] = useState('');
     const [selectedFile, setSelectedFile] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+
+    const fileInputRef = useRef(null);
 
     const [formData, setFormData] = useState({
         name: '', type: '', size: 'medium', energyLevel: 'medium', age: 'young', description: '', status: 'draft'
@@ -66,6 +68,13 @@ const FoundationDashboardPage = () => {
             const file = e.target.files[0];
             setSelectedFile(file);
             setImagePreviewUrl(URL.createObjectURL(file));
+        }
+    };
+
+    const handleTriggerFileSelect = (e) => {
+        e.preventDefault();
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
         }
     };
 
@@ -428,12 +437,16 @@ const FoundationDashboardPage = () => {
                         <div className="space-y-2.5 text-left flex-1">
                             <div className="space-y-1">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Foto de Perfil</label>
-                                <label className="w-full aspect-[16/9] border-2 border-dashed border-slate-200 bg-slate-50 rounded-2xl flex flex-col items-center justify-center gap-1 cursor-pointer text-slate-400 hover:bg-slate-100/50 transition-colors overflow-hidden relative shrink-0">
+                                <div
+                                    onClick={handleTriggerFileSelect}
+                                    className="w-full aspect-[16/9] border-2 border-dashed border-slate-200 bg-slate-50 rounded-2xl flex flex-col items-center justify-center gap-1 cursor-pointer text-slate-400 hover:bg-slate-100/50 transition-colors overflow-hidden relative shrink-0"
+                                >
                                     <input
+                                        ref={fileInputRef}
                                         type="file"
                                         accept="image/*"
                                         onChange={handleFileChange}
-                                        className="sr-only"
+                                        className="hidden"
                                     />
                                     {imagePreviewUrl ? (
                                         <div className="absolute inset-0 w-full h-full">
@@ -446,7 +459,7 @@ const FoundationDashboardPage = () => {
                                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Seleccionar Imagen</span>
                                         </>
                                     )}
-                                </label>
+                                </div>
                             </div>
 
                             <div className="space-y-1">
