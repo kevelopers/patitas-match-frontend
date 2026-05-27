@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Camera, MapPin, Loader2, CheckCircle, AlertCircle, Map } from 'lucide-react';
 import MapPicker from '../../components/MapPicker';
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const RescuePage = () => {
     const [imagePreview, setImagePreview] = useState(null);
@@ -83,18 +83,17 @@ const RescuePage = () => {
         setSimulationState("uploading");
         setErrorMessage("");
 
+        const token = localStorage.getItem("access_token");
         const formData = new FormData();
         formData.append("location", `${locationText} | ${descriptionText}`);
         formData.append("image", imageFile);
 
         try {
-            const token = localStorage.getItem('access_token');
             const response = await fetch(`${API_BASE_URL}/rescues`, {
                 method: "POST",
                 body: formData,
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    "Authorization": `Bearer ${token}`
                 }
             });
 
