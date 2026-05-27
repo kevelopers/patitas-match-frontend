@@ -29,21 +29,34 @@ const RescuePage = () => {
     }, []);
 
     const handleImageSelection = (event) => {
+        console.log("=== [DEBUG] handleImageSelection ejecutado ===");
         const file = event.target.files[0];
         if (file) {
+            console.log("=== [DEBUG] Archivo detectado ===", {
+                name: file.name,
+                size: file.size,
+                type: file.type
+            });
             setImageFile(file);
             setImagePreview(URL.createObjectURL(file));
             setSimulationState("idle");
             setAiTags("");
             setErrorMessage("");
+        } else {
+            console.log("=== [DEBUG] No se seleccionó ningún archivo ===");
         }
         event.target.value = null;
     };
 
     const handleTriggerFileSelect = (e) => {
         e.preventDefault();
+        console.log("=== [DEBUG] Click detectado en el contenedor de imagen ===");
+
         if (fileInputRef.current) {
+            console.log("=== [DEBUG] Ejecutando click() programático en el input oculto ===");
             fileInputRef.current.click();
+        } else {
+            console.log("=== [DEBUG] ERROR: fileInputRef.current es NULL ===");
         }
     };
 
