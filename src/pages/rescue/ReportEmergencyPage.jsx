@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Camera, MapPin, Loader2, CheckCircle, AlertCircle, Map } from 'lucide-react';
 import MapPicker from '../../components/MapPicker';
+import ImagePicker from '../../components/ImagePicker';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -26,8 +27,7 @@ const RescuePage = () => {
         };
     }, []);
 
-    const handleImageSelection = (event) => {
-        const file = event.target.files[0];
+    const handleImageSelection = (file) => {
         if (file) {
             setImageFile(file);
             setImagePreview(URL.createObjectURL(file));
@@ -133,31 +133,19 @@ const RescuePage = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5 max-w-sm w-full mx-auto relative">
-                {/* Contenedor funcional nativo */}
-                <label className="relative w-full aspect-video bg-white rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden cursor-pointer active:scale-[0.98] transition-transform shadow-[0_4px_12px_rgba(0,0,0,0.02)] shrink-0">
-                    <input
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        className="hidden"
-                        onChange={handleImageSelection}
-                        disabled={simulationState === "uploading"}
+                <div className="relative w-full aspect-video rounded-3xl overflow-hidden shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.02)]">
+                    <ImagePicker
+                        previewUrl={imagePreview}
+                        onFileSelect={handleImageSelection}
+                        placeholderText="Subir foto del animal"
                     />
-                    {imagePreview ? (
-                        <img src={imagePreview} alt="Rescue Target" className="w-full h-full object-cover pointer-events-none" />
-                    ) : (
-                        <div className="flex flex-col items-center text-slate-400 pointer-events-none">
-                            <Camera size={36} className="mb-2 text-teal-500" />
-                            <span className="font-bold text-xs tracking-wide">Subir foto del animal</span>
-                        </div>
-                    )}
                     {simulationState === "uploading" && (
-                        <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm flex flex-col items-center justify-center text-white pointer-events-none">
+                        <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm flex flex-col items-center justify-center text-white pointer-events-none z-20">
                             <Loader2 size={32} className="animate-spin mb-3 text-teal-400" />
                             <span className="font-semibold text-sm animate-pulse tracking-wide">IA Procesando Imagen...</span>
                         </div>
                     )}
-                </label>
+                </div>
 
                 <div className="flex gap-2 relative z-30 shrink-0">
                     <div className="relative flex-1">
