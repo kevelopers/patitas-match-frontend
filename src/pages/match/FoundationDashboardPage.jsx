@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Plus, Search, X, Heart, ShieldCheck, RefreshCw, Calendar, FileText, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
+import { Plus, Search, Heart, ShieldCheck, RefreshCw, Calendar, FileText, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
 import ImagePicker from '../../components/ImagePicker';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -33,6 +33,18 @@ const FoundationDashboardPage = () => {
     const [formData, setFormData] = useState({
         name: '', type: '', size: 'medium', energyLevel: 'medium', age: 'young', description: '', status: 'draft'
     });
+
+    const sanitizeAnimalPhoto = (photoPath) => {
+        if (!photoPath || photoPath === '🐾') return '';
+        if (photoPath.startsWith('http://localhost:8000')) {
+            return photoPath.replace('http://localhost:8000', API_BASE_URL);
+        }
+        if (photoPath.startsWith('/static') || photoPath.startsWith('static')) {
+            const normalized = photoPath.startsWith('/') ? photoPath : `/${photoPath}`;
+            return `${API_BASE_URL}${normalized}`;
+        }
+        return photoPath;
+    };
 
     const fetchAnimalsData = async () => {
         if (!user?.id) return;
@@ -86,12 +98,7 @@ const FoundationDashboardPage = () => {
             status: animal.status
         });
         setSelectedFile(null);
-
-        const sanitizedPhoto = animal.photo && animal.photo.startsWith('http://localhost:8000')
-            ? animal.photo.replace('http://localhost:8000', API_BASE_URL)
-            : animal.photo;
-
-        setImagePreviewUrl(sanitizedPhoto && sanitizedPhoto !== '🐾' ? sanitizedPhoto : '');
+        setImagePreviewUrl(sanitizeAnimalPhoto(animal.photo));
         setIsEditModalOpen(true);
     };
 
@@ -318,9 +325,7 @@ const FoundationDashboardPage = () => {
                     </div>
                 ) : (
                     filteredAnimals.map((animal) => {
-                        const sanitizedPhotoUrl = animal.photo && animal.photo.startsWith('http://localhost:8000')
-                            ? animal.photo.replace('http://localhost:8000', API_BASE_URL)
-                            : animal.photo;
+                        const sanitizedPhotoUrl = sanitizeAnimalPhoto(animal.photo);
 
                         return (
                             <div

@@ -13,10 +13,8 @@ const RescuePage = () => {
     const [simulationState, setSimulationState] = useState("idle");
     const [aiTags, setAiTags] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
-
     const [showMapModal, setShowMapModal] = useState(false);
     const [mapCoordinates, setMapCoordinates] = useState({ lat: 10.4806, lng: -66.9036 });
-
     const [locationSuggestions, setLocationSuggestions] = useState([]);
 
     const searchDebounceRef = useRef(null);
